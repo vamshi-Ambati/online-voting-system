@@ -1,0 +1,239 @@
+.candidate-container {
+  max-width: 1100px;
+  margin: 100px auto 100px auto;
+  padding: 20px;
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 8px 24px rgba(110, 142, 251, 0.08);
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.candidate-container h2 {
+  text-align: center;
+  color: #6e8efb;
+  margin-bottom: 32px;
+  font-weight: 700;
+  font-size: 2rem;
+}
+
+.admin-buttons {
+  display: flex;
+  justify-content: center;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.candidate-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  align-items: center;
+  width: 100%;
+}
+
+.candidate-card {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 24px;
+  background: transparent;
+  border-radius: 0;
+  box-shadow: none;
+  width: 100%;
+  max-width: 750px;
+  padding: 18px 18px;
+  border-bottom: 1.5px solid #e0e0e0;
+}
+
+.candidate-card:last-child {
+  border-bottom: none;
+}
+
+.candidate-name {
+  flex: 1;
+  font-size: 1.15rem;
+  font-weight: 600;
+  color: #333;
+  text-align: left;
+}
+
+.candidate-party {
+  flex: 1;
+  color: #333;
+  font-weight: 500;
+  font-size: 1.05rem;
+  text-align: left;
+}
+
+.candidate-photo img {
+  width: 70px;
+  height: 70px;
+  border-radius: 10px;
+  background: #fff;
+  /* Uncomment for border if you want it: */
+  /* border: 1.5px solid #a777e3; */
+  /* border: 1px solid black; */
+}
+
+/* Button styles */
+.vote-btn,
+.add-btn,
+.get-btn {
+  background: linear-gradient(135deg, #6e8efb, #a777e3);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 8px 24px;
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.3s, transform 0.3s, box-shadow 0.3s;
+  min-width: 90px;
+  box-shadow: 0 4px 12px rgba(74, 144, 226, 0.18);
+  letter-spacing: 0.5px;
+}
+.add-candidate-btn-wrapper {
+  display: flex;
+  justify-content: center;
+  margin-top: 12px;
+}
+
+.add-candidate-btn {
+  width: 50%;
+  min-width: 120px; /* Optional: set a minimum width for small screens */
+  max-width: 240px; /* Optional: set a maximum width */
+  background: linear-gradient(135deg, #6e8efb, #a777e3);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 8px 24px;
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.3s, transform 0.3s, box-shadow 0.3s;
+  box-shadow: 0 4px 12px rgba(74, 144, 226, 0.18);
+  letter-spacing: 0.5px;
+}
+
+.add-candidate-btn:hover:not(:disabled) {
+  background: linear-gradient(135deg, #5d7df9, #9665e0);
+  transform: translateY(-3px) scale(1.05);
+  box-shadow: 0 6px 18px rgba(53, 122, 189, 0.2);
+}
+
+.add-candidate-btn:disabled {
+  background: #bbb;
+  color: #666;
+  cursor: not-allowed;
+  box-shadow: none;
+  transform: none;
+}
+
+/* Make vote button black with spacing */
+.vote-btn {
+  background: #323030 !important;
+  margin-left: 50px;
+}
+
+.vote-btn:hover:not(:disabled),
+.add-btn:hover:not(:disabled),
+.get-btn:hover:not(:disabled),
+.add-candidate-btn:hover:not(:disabled) {
+  background: linear-gradient(135deg, #5d7df9, #9665e0);
+  transform: translateY(-3px) scale(1.05);
+  box-shadow: 0 6px 18px rgba(53, 122, 189, 0.2);
+}
+
+.vote-btn:disabled,
+.add-btn:disabled,
+.get-btn:disabled,
+.add-candidate-btn:disabled {
+  background: #bbb !important;
+  color: #666;
+  cursor: not-allowed;
+  box-shadow: none;
+  transform: none;
+}
+
+/* Add Candidate Form */
+.add-candidate-form {
+  background: #f5f7fa;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(110, 142, 251, 0.07);
+  padding: 18px 18px 10px 18px;
+  margin-bottom: 32px;
+  max-width: 600px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.add-candidate-form h3 {
+  margin-top: 0;
+  color: #6e8efb;
+  font-size: 1.15rem;
+  font-weight: 600;
+  margin-bottom: 10px;
+  text-align: center;
+}
+
+.add-candidate-form .form-row {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.add-candidate-form input,
+.add-candidate-form textarea {
+  flex: 1;
+  padding: 10px;
+  border: 2px solid #ddd;
+  border-radius: 6px;
+  font-size: 1rem;
+  transition: border 0.2s, box-shadow 0.2s;
+}
+
+.add-candidate-form input:focus,
+.add-candidate-form textarea:focus {
+  border-color: #6e8efb;
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(110, 142, 251, 0.1);
+}
+
+.add-candidate-form textarea {
+  resize: vertical;
+  min-height: 36px;
+}
+
+/* Responsive Design */
+@media (max-width: 900px) {
+  .candidate-card {
+    max-width: 95vw;
+  }
+}
+
+@media (max-width: 700px) {
+  .candidate-card {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+    max-width: 98vw;
+    padding: 10px 4px;
+  }
+  .candidate-photo img {
+    margin-bottom: 8px;
+  }
+  .vote-btn {
+    width: 100%;
+    min-width: unset;
+    margin-left: 0;
+  }
+  .candidate-name,
+  .candidate-party {
+    text-align: left;
+    width: 100%;
+  }
+  .add-candidate-form .form-row {
+    flex-direction: column;
+    gap: 8px;
+  }
+}

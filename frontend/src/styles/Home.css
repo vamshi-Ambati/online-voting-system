@@ -1,0 +1,235 @@
+/* Home.css */
+
+.home-container {
+  min-height: 100vh;
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+  padding-top: 100px; /* For fixed navbar */
+}
+
+/* Hero Section */
+.hero-section {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 60px 0 40px 0;
+}
+
+.hero-content {
+  background: rgba(255, 255, 255, 0.92);
+  border-radius: 18px;
+  box-shadow: 0 8px 32px rgba(110, 142, 251, 0.13);
+  padding: 60px 40px;
+  text-align: center;
+  max-width: 520px;
+}
+
+.hero-content h1 {
+  font-size: 2.7rem;
+  font-weight: 800;
+  margin-bottom: 20px;
+  color: #6e8efb;
+  letter-spacing: 1px;
+}
+
+
+.hero-content p {
+  font-size: 1.18rem;
+  color: #444;
+  margin-bottom: 34px;
+  font-weight: 500;
+  line-height: 1.6;
+}
+
+.hero-buttons {
+  display: flex;
+  gap: 18px;
+  justify-content: center;
+}
+
+.btn {
+  padding: 14px 34px;
+  border: none;
+  border-radius: 8px;
+  font-size: 1.1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s;
+  box-shadow: 0 4px 12px rgba(110, 142, 251, 0.1);
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, #6e8efb, #a777e3);
+  color: #fff;
+}
+
+.btn-primary:hover {
+  background: linear-gradient(135deg, #5d7df9, #9665e0);
+  transform: translateY(-2px) scale(1.03);
+}
+
+.btn-secondary {
+  background: #fff;
+  color: #6e8efb;
+  border: 2px solid #6e8efb;
+}
+
+.btn-secondary:hover {
+  background: #e3eafd;
+  color: #5d7df9;
+  border-color: #5d7df9;
+  transform: translateY(-2px) scale(1.03);
+}
+
+/* Features Section */
+.features-section {
+  padding: 60px 0 40px 0;
+  background: rgba(255, 255, 255, 0.75);
+  backdrop-filter: blur(2px);
+}
+
+.features-content {
+  max-width: 980px;
+  margin: 0 auto;
+  text-align: center;
+}
+
+.features-title {
+  font-size: 2rem;
+  font-weight: 800;
+  color: #6e8efb;
+  margin-bottom: 36px;
+  letter-spacing: 1px;
+}
+
+.features-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  gap: 28px;
+}
+
+.feature-item {
+  background: #fff;
+  border-radius: 14px;
+  box-shadow: 0 8px 24px rgba(110, 142, 251, 0.09);
+  padding: 28px 18px;
+  transition: transform 0.22s, box-shadow 0.22s;
+  border: 1.5px solid #e0e6f7;
+  text-align: center;
+}
+
+.feature-item:hover {
+  transform: translateY(-7px) scale(1.04);
+  box-shadow: 0 16px 36px rgba(110, 142, 251, 0.14);
+  border-color: #a777e3;
+}
+
+.feature-icon {
+  font-size: 2.2rem;
+  margin-bottom: 12px;
+  color: #a777e3;
+}
+
+.feature-item h3 {
+  font-size: 1.08rem;
+  color: #6e8efb;
+  margin-bottom: 8px;
+  font-weight: 700;
+}
+
+.feature-item p {
+  color: #555;
+  font-size: 0.98rem;
+  line-height: 1.5;
+}
+
+/* CTA Section */
+.cta-section {
+  background: linear-gradient(135deg, #a777e3 0%, #6e8efb 100%);
+  color: #fff;
+  padding: 60px 0 54px 0;
+  text-align: center;
+  margin-top: 50px;
+  border-radius: 28px 28px 0 0;
+  box-shadow: 0 -8px 32px rgba(110, 142, 251, 0.13);
+  position: relative;
+  z-index: 2;
+}
+
+.cta-content h2 {
+  font-size: 2.1rem;
+  margin-bottom: 16px;
+  font-weight: 800;
+  letter-spacing: 1px;
+}
+
+.cta-content p {
+  font-size: 1.15rem;
+  margin-bottom: 28px;
+  opacity: 0.95;
+  line-height: 1.6;
+}
+
+.btn-cta {
+  background: linear-gradient(90deg, #ffe082 60%, #fffde4 100%);
+  color: #6e8efb;
+  padding: 16px 44px;
+  font-size: 1.18rem;
+  border: none;
+  border-radius: 9px;
+  font-weight: 800;
+  transition: background 0.3s, color 0.3s, transform 0.22s;
+  box-shadow: 0 4px 12px rgba(110, 142, 251, 0.12);
+  letter-spacing: 0.5px;
+}
+
+.btn-cta:hover {
+  background: #fffde4;
+  color: #a777e3;
+  transform: translateY(-2px) scale(1.045);
+  box-shadow: 0 8px 24px rgba(110, 142, 251, 0.17);
+}
+
+/* Responsive Design */
+@media (max-width: 900px) {
+  .hero-content {
+    padding: 40px 20px;
+    max-width: 98vw;
+  }
+  .features-content {
+    padding: 0 10px;
+  }
+}
+
+@media (max-width: 700px) {
+  .hero-section {
+    padding: 32px 0 20px 0;
+  }
+  .hero-content h1 {
+    font-size: 1.6rem;
+  }
+  .features-section {
+    padding: 30px 0 10px 0;
+  }
+  .features-list {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+  .feature-item {
+    padding: 18px 6px;
+  }
+  .cta-section {
+    padding: 36px 0;
+    border-radius: 18px 18px 0 0;
+    margin-top: 24px;
+  }
+  .cta-content h2 {
+    font-size: 1.3rem;
+  }
+  .btn,
+  .btn-cta {
+    font-size: 1rem;
+    padding: 10px 18px;
+  }
+}

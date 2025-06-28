@@ -1,0 +1,149 @@
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+.container {
+  width: 100vw;
+  /* background: linear-gradient(90deg, #4e54c8 0%, #8f94fb 100%); */
+    background: linear-gradient(135deg, #5d7df9, #9665e0);
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.7rem 2rem;
+  box-shadow: 0 2px 14px rgba(44, 62, 80, 0.07);
+  position: fixed;
+  top: 0;
+  left: 0;
+  height: 80px;
+  z-index: 1000;
+}
+
+.logo-name {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+}
+
+.logo-img {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.logo-name a {
+  color: #fff;
+  font-size: 1.32rem;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-decoration: none;
+  transition: color 0.2s;
+}
+
+.logo-name a:hover {
+  color: #e0e3ff;
+}
+
+.nav nav ul {
+  display: flex;
+  align-items: center;
+  gap: 1.3rem;
+  list-style: none;
+}
+
+.nav nav ul li a {
+  color: #fff;
+  text-decoration: none;
+  font-size: 1.08rem;
+  font-weight: 500;
+  padding: 0.3rem 0.7rem;
+  border-radius: 5px;
+  transition: background 0.18s, color 0.18s;
+}
+
+.nav nav ul li a:hover,
+.nav nav ul li a.active {
+  color: white;
+  font-weight: bold;
+  /* color: #222; */
+  /* text-decoration: underline;/ */
+  /* text-decoration-color: #fff; */
+  text-underline-offset: 3px;
+}
+
+.button {
+  background: linear-gradient(135deg, #5d7df9, #9665e0);
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  padding: 0.43rem 1.1rem;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: none;
+  background-size: 200% 100%;
+  background-position: left;
+}
+
+/* No hover effect for .button (Login) */
+/* .button:hover {
+  background: linear-gradient(90deg, #8f94fb 0%, #4e54c8 100%);
+  background-position: right;
+  transform: translateY(-2px) scale(1.03);
+} */
+
+.hamburger {
+  display: none;
+  flex-direction: column;
+  gap: 5px;
+  cursor: pointer;
+  margin-left: 1.5rem;
+}
+
+.hamburger span {
+  width: 24px;
+  height: 3px;
+  background: #fff;
+  border-radius: 2px;
+  display: block;
+}
+
+@media (max-width: 800px) {
+  .container {
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 0.7rem 1rem;
+    height: auto;
+  }
+  .logo-name {
+    margin-bottom: 0.7rem;
+  }
+  .nav nav ul {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.7rem;
+  }
+}
+
+@media (max-width: 600px) {
+  .container {
+    padding: 0.7rem 0.3rem;
+  }
+  .logo-name a {
+    font-size: 1.06rem;
+  }
+  .nav nav ul li a {
+    font-size: 0.97rem;
+    padding: 0.3rem 0.5rem;
+  }
+  .button {
+    font-size: 0.97rem;
+    padding: 0.35rem 0.7rem;
+  }
+  .hamburger {
+    display: flex;
+  }
+}
