@@ -3,7 +3,7 @@ import { toast } from "react-toastify";
 import { FiPlus } from "react-icons/fi";
 import "../styles/candidates.css";
 import apiUrl from "../apiUrl";
-import voteImage from "/images/vote2.png"; // Ensure this path is correct
+import voteImage from "/images/vote2.png"; 
 
 const Candidates = () => {
   const [candidates, setCandidates] = useState([]);
