@@ -1,13 +1,13 @@
 const voteModel = require("../models/Vote");
 
 const handleCastVote = async (req, res) => {
-  const { voterId, voterEmail, candidateId, votedFor } = req.body;
+  const { voterId, voter_Name, candidateId, votedFor } = req.body;
   console.log("Received vote request:", req.body);
 
-  if (!voterId || !candidateId || !voterEmail || !votedFor) {
+  if (!voterId || !candidateId || !voter_Name || !votedFor) {
     return res
       .status(400)
-      .json({ message: "Voter ID, email, and Candidate ID are required." });
+      .json({ message: "Voter ID, name, and Candidate ID are required." });
   }
 
   try {
@@ -20,7 +20,7 @@ const handleCastVote = async (req, res) => {
     // Save the vote
     const newVote = new voteModel({
       voterId,
-      voterEmail,
+      voter_Name,
       candidateId,
       votedFor,
     });

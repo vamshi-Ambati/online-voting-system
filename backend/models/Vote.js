@@ -6,7 +6,7 @@ const voteSchema = new mongoose.Schema({
     required: true,
     unique: true, // Each voter can only vote once
   },
-  voterEmail: {
+  voter_Name: {
     type: String,
     required: true,
   },

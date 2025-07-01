@@ -122,7 +122,7 @@ const Candidates = () => {
         body: JSON.stringify({
           candidateId,
           voterId: voter.id,
-          voterEmail: voter.email,
+          voter_Name: voter.username,
           votedFor, // <-- send votedFor instead of party
         }),
       });
