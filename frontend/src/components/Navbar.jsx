@@ -9,8 +9,12 @@ const Navbar = () => {
 
   const handleLogout = () => {
     // Remove token and user info from localStorage
-    localStorage.removeItem("token");
+    const voter = JSON.parse(localStorage.getItem("voter"));
+    if (voter && voter.id) {
+      localStorage.removeItem(`votedCandidateId_${voter.id}`);
+    }
     localStorage.removeItem("voter");
+    localStorage.removeItem("token");
     navigate("/login");
   };
 

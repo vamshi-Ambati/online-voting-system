@@ -16,18 +16,28 @@ const Candidates = () => {
     photoUrl: "",
   });
   const [votedCandidateId, setVotedCandidateId] = useState(null);
+  const [loadingVote, setLoadingVote] = useState(false);
 
-  // Get voter from localStorage
+  // Get voter from localStorage (always fresh)
   const voter = JSON.parse(localStorage.getItem("voter")) || {
     role: "candidate",
   };
 
   useEffect(() => {
-    if (voter.role === "candidate") {
+    if (voter.role === "candidate" || voter.role === "admin") {
       getCandidates();
       setShowCandidates(true);
       setShowAddForm(false);
+
+      // Check if this user has already voted (per user)
+      if (voter.id) {
+        const votedId = localStorage.getItem(`votedCandidateId_${voter.id}`);
+        if (votedId) {
+          setVotedCandidateId(votedId);
+        }
+      }
     }
+    // eslint-disable-next-line
   }, []);
 
   // Fetch all candidates
@@ -87,26 +97,42 @@ const Candidates = () => {
     }
   };
 
-  // Complete voting functionality
-  const handleVoteBtn = async (candidateId) => {
-    if (!voter || !voter._id) {
+  // Handle voting
+  const handleVoteBtn = async (candidateId, votedFor) => {
+    const voter = JSON.parse(localStorage.getItem("voter"));
+    if (!voter || !voter.id) {
       toast.error("You must be logged in as a voter to vote.");
       return;
     }
 
+    // Check per-user votedCandidateId
+    const votedCandidateIdForUser = localStorage.getItem(
+      `votedCandidateId_${voter.id}`
+    );
+    if (votedCandidateIdForUser) {
+      toast.info("You have already voted.");
+      return;
+    }
+
+    setLoadingVote(true);
     try {
-      const response = await fetch(`${apiUrl}/api/vote`, {
+      const response = await fetch(`${apiUrl}/api/votes/vote`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           candidateId,
-          voterId: voter._id,
+          voterId: voter.id,
+          voterEmail: voter.email,
+          votedFor, // <-- send votedFor instead of party
         }),
       });
+
       const data = await response.json();
       if (response.ok) {
         toast.success(data.message || "Vote cast successfully!");
         setVotedCandidateId(candidateId);
+        // Store votedCandidateId per user
+        localStorage.setItem(`votedCandidateId_${voter.id}`, candidateId);
       } else {
         toast.error(data.message || "Failed to cast vote.");
       }
@@ -114,6 +140,7 @@ const Candidates = () => {
       console.error("Voting error:", error);
       toast.error("An error occurred while voting.");
     }
+    setLoadingVote(false);
   };
 
   return (
@@ -124,7 +151,7 @@ const Candidates = () => {
       {voter.role === "admin" && (
         <div className="admin-buttons">
           <button className="add-btn" onClick={addCandidateBtn}>
-             Add Candidate
+            Add Candidate
           </button>
           <button className="get-btn" onClick={getCandidates}>
             Get Candidates
@@ -163,7 +190,7 @@ const Candidates = () => {
               onChange={handleInputChange}
             />
           </div>
-          {/* Description field is optional and can be added back if needed */}
+          {/* Description field is optional */}
           {/* <div className="form-row">
             <textarea
               name="description"
@@ -200,7 +227,7 @@ const Candidates = () => {
         </div>
       )}
 
-      {/* Candidate list for candidate login */}
+      {/* Candidate list for candidate login (voters) */}
       {voter.role === "candidate" && showCandidates && (
         <div className="candidate-list">
           {candidates.length === 0 && <p>No candidates found.</p>}
@@ -216,10 +243,14 @@ const Candidates = () => {
               </div>
               <button
                 className="vote-btn"
-                onClick={() => handleVoteBtn(candidate._id)}
-                disabled={votedCandidateId !== null}
+                onClick={() => handleVoteBtn(candidate._id, candidate.party)} // pass party as votedFor
+                disabled={!!votedCandidateId || loadingVote}
               >
-                Vote
+                {votedCandidateId === candidate._id
+                  ? "Voted"
+                  : loadingVote
+                  ? "Voting..."
+                  : "Vote"}
               </button>
             </div>
           ))}
