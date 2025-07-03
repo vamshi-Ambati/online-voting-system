@@ -25,6 +25,7 @@ const Navbar = () => {
           <img src={voteImage} alt="Vote Logo" className="logo-img" />
         </NavLink>
         <NavLink to="/">ONLINE VOTING SYSTEM</NavLink>
+        {/* <NavLink>eVote</NavLink> */}
       </div>
       <div className="nav">
         <nav>

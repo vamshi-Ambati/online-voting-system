@@ -22,12 +22,24 @@ const Register = () => {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ username, email, password, role }), // Include role
+        body: JSON.stringify({ username, email, password, role }),
       });
       const data = await response.json();
+
       if (response.ok) {
-        toast.success("Registration successful!");
-        navigate("/login");
+        // Show Vote ID in a toast (or use alert if you prefer)
+        if (data.voter && data.voter.voteId) {
+          toast.info(`Your Vote ID is: ${data.voter.voteId}`, {
+            autoClose: 30000, // Show for 30 seconds
+            position: "top-center",
+          });
+        }
+        toast.success(`Registration successful!`,{
+          autoClose: 1000, // Show for 1 second
+        });
+
+        // Optionally, you can delay navigation so user sees the toast
+        setTimeout(() => navigate("/login"), 2000);
       } else {
         toast.error(data?.message || "Registration failed.");
       }

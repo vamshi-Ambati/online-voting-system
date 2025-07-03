@@ -1,20 +1,14 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
-import {
-  FaEnvelope,
-  FaLock,
-  FaEye,
-  FaEyeSlash,
-  FaSignInAlt,
-} from "react-icons/fa";
+import { FaIdCard, FaLock, FaEye, FaEyeSlash, FaSignInAlt } from "react-icons/fa";
 import "react-toastify/dist/ReactToastify.css";
 import "../styles/Login.css";
 import apiUrl from "../apiUrl";
 
 const Login = () => {
   const navigate = useNavigate();
-  const [email, setEmail] = useState("");
+  const [voteId, setVoteId] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [role, setRole] = useState("candidate"); // Default role
@@ -27,7 +21,7 @@ const Login = () => {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ email, password, role }),
+        body: JSON.stringify({ voteId, password, role }), // Use voteId here
       });
       const data = await response.json();
 
@@ -35,12 +29,14 @@ const Login = () => {
         toast.error(data.message);
         return;
       }
-      
+
       // Success
       if (data.token) localStorage.setItem("token", data.token);
       if (data.voter) localStorage.setItem("voter", JSON.stringify(data.voter));
 
-      toast.success("Login successful!");
+      toast.success(`Login successful!`,{
+        autoClose: 1000, // Show for 1 second
+      });
       navigate("/candidates");
     } catch (error) {
       toast.error("An error occurred while logging in.");
@@ -58,15 +54,15 @@ const Login = () => {
         <form onSubmit={handleLogin}>
           <div className="input-group">
             <div className="input-icon">
-              <FaEnvelope />
+              <FaIdCard />
             </div>
             <input
-              type="email"
-              name="email"
-              placeholder="Email"
+              type="text"
+              name="voteId"
+              placeholder="voter ID"
               autoComplete="username"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              value={voteId}
+              onChange={(e) => setVoteId(e.target.value)}
               required
             />
           </div>

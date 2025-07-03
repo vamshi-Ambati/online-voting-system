@@ -3,7 +3,7 @@ import { toast } from "react-toastify";
 import { FiPlus } from "react-icons/fi";
 import "../styles/candidates.css";
 import apiUrl from "../apiUrl";
-import voteImage from "/images/vote2.png"; 
+import voteImage from "/images/vote2.png";
 
 const Candidates = () => {
   const [candidates, setCandidates] = useState([]);
@@ -97,8 +97,15 @@ const Candidates = () => {
     }
   };
 
-  // Handle voting
+  // Handle voting with confirmation
   const handleVoteBtn = async (candidateId, votedFor) => {
+    // Show confirmation dialog
+    const candidate = candidates.find((c) => c._id === candidateId);
+    const confirmMsg = `Are you sure you want to vote for "${candidate?.name}" (${candidate?.party})? You cannot change your vote later.`;
+    if (!window.confirm(confirmMsg)) {
+      return; // If user cancels, do nothing
+    }
+
     const voter = JSON.parse(localStorage.getItem("voter"));
     if (!voter || !voter.id) {
       toast.error("You must be logged in as a voter to vote.");
@@ -129,7 +136,9 @@ const Candidates = () => {
 
       const data = await response.json();
       if (response.ok) {
-        toast.success(data.message || "Vote cast successfully!");
+        toast.success(data.message || `Vote cast successfully!`, {
+          autoClose: 1000, // Show for 1 second
+        });
         setVotedCandidateId(candidateId);
         // Store votedCandidateId per user
         localStorage.setItem(`votedCandidateId_${voter.id}`, candidateId);
@@ -242,8 +251,10 @@ const Candidates = () => {
                 />
               </div>
               <button
-                className="vote-btn"
-                onClick={() => handleVoteBtn(candidate._id, candidate.party)} // pass party as votedFor
+                className={`vote-btn${
+                  votedCandidateId === candidate._id ? " voted-btn" : ""
+                }`}
+                onClick={() => handleVoteBtn(candidate._id, candidate.party)}
                 disabled={!!votedCandidateId || loadingVote}
               >
                 {votedCandidateId === candidate._id

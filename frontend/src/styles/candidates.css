@@ -237,3 +237,9 @@
     gap: 8px;
   }
 }
+.voted-btn {
+  background-color: silver !important;
+  color: #222 !important;
+  cursor: not-allowed !important;
+  border: 1px solid #aaa !important;
+}
