@@ -1,4 +1,6 @@
-/* Root Layout */
+/* =========================
+   1. Root Layout
+   ========================= */
 .dashboard-root {
   display: flex;
   min-height: 100vh;
@@ -8,7 +10,9 @@
   gap: 40px;
 }
 
-/* Main Content */
+/* =========================
+   2. Main Content
+   ========================= */
 .dashboard-main {
   flex: 0 0 60%;
   max-width: 65%;
@@ -20,7 +24,9 @@
   min-width: 0;
 }
 
-/* Header */
+/* =========================
+   3. Header
+   ========================= */
 .dashboard-header {
   display: flex;
   align-items: center;
@@ -52,14 +58,18 @@
 .status-error { background: #b91c1c; }
 .status-running { background: #1976d2; }
 
-/* Description */
+/* =========================
+   4. Description
+   ========================= */
 .dashboard-desc {
   font-size: 1.1rem;
   color: #444;
   margin-bottom: 28px;
 }
 
-/* Cards */
+/* =========================
+   5. Cards
+   ========================= */
 .dashboard-cards {
   display: flex;
   gap: 32px;
@@ -104,7 +114,9 @@
   color: #1976d2;
 }
 
-/* Participation Bar */
+/* =========================
+   6. Participation Bar
+   ========================= */
 .dashboard-participation {
   margin-bottom: 30px;
 }
@@ -130,7 +142,9 @@
   transition: width 0.6s;
 }
 
-/* Info Section */
+/* =========================
+   7. Info Section
+   ========================= */
 .dashboard-info {
   display: flex;
   gap: 40px;
@@ -143,12 +157,13 @@
   color: #1976d2;
 }
 
-/* Right Sidebar */
+/* =========================
+   8. Right Sidebar
+   ========================= */
 .dashboard-right {
   flex: 0 0 30%;
   max-width: 35%;
   background: linear-gradient(135deg, #f6f8fa 70%, #e3f0ff 100%);
-  /* border-radius: 0 24px 24px 0; */
   border-radius: 24px;
   box-shadow: 0 4px 32px 0 rgba(25, 118, 210, 0.07), -2px 0 12px 0 rgba(0,0,0,0.04);
   padding: 32px 28px 32px 28px;
@@ -215,7 +230,106 @@
   letter-spacing: 0.02em;
 }
 
-/* Responsive */
+.activity-date {
+  display: block;
+  font-size: 0.88em;
+  color: #b0b0b0;
+  margin-top: 2px;
+  font-family: 'Roboto Mono', monospace;
+}
+
+.username {
+  color: #1976d2;
+  font-weight: 700;
+  font-family: 'Segoe UI', 'Roboto', Arial, sans-serif;
+  letter-spacing: 0.02em;
+}
+
+/* =========================
+   9. Modal Styles
+   ========================= */
+.modal-overlay {
+  position: fixed;
+  top:0; left:0; right:0; bottom:0;
+  background: rgba(0,0,0,0.25);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.modal-content {
+  background: #fff;
+  border-radius: 16px;
+  padding: 32px 24px 24px 24px;
+  min-width: 320px;
+  max-width: 98vw;
+  max-height: 80vh;
+  overflow-y: auto;
+  position: relative;
+  box-shadow: 0 4px 32px 0 rgba(25, 118, 210, 0.13);
+}
+.modal-close {
+  position: absolute;
+  top: 12px;
+  right: 16px;
+  font-size: 1.5rem;
+  background: none;
+  border: none;
+  color: #888;
+  cursor: pointer;
+}
+.modal-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 16px;
+  font-size: 1rem;
+}
+.modal-table th, .modal-table td {
+  padding: 10px 12px;
+  text-align: left;
+}
+.modal-table th {
+  background: #1976d2;
+  color: #fff;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+}
+.modal-table tr:nth-child(even) {
+  background: #f1f6fb;
+}
+.modal-table tr:nth-child(odd) {
+  background: #fff;
+}
+.modal-table .username {
+  color: #1976d2;
+  font-weight: 700;
+}
+
+/* =========================
+   10. Utility Buttons
+   ========================= */
+.sidebar-nav-btn {
+  background: none;
+  border: none;
+  color: #1976d2;
+  font-size: 1.25em;
+  margin: 0 2px;
+  cursor: pointer;
+  padding: 2px 6px;
+  border-radius: 4px;
+  transition: background 0.1s;
+}
+.sidebar-nav-btn:disabled {
+  color: #b0b0b0;
+  cursor: not-allowed;
+  background: none;
+}
+
+/* =========================
+   11. Responsive Styles
+   ========================= */
+
+/* Tablet & Small Desktop */
 @media (max-width: 1100px) {
   .dashboard-root {
     flex-direction: column;
@@ -248,88 +362,103 @@
     gap: 12px;
   }
 }
-.activity-date {
-  display: block;
-  font-size: 0.88em;
-  color: #b0b0b0;
-  margin-top: 2px;
-  font-family: 'Roboto Mono', monospace;
-}
-.username {
-  color: #1976d2;
-  font-weight: 700;
-  font-family: 'Segoe UI', 'Roboto', Arial, sans-serif;
-  letter-spacing: 0.02em;
-}
-.modal-table {
-  width: 100%;
-  border-collapse: collapse;
-  margin-top: 16px;
-  font-size: 1rem;
-}
-.modal-table th, .modal-table td {
-  padding: 10px 12px;
-  text-align: left;
-}
-.modal-table th {
-  background: #1976d2;
-  color: #fff;
-  font-weight: 600;
-  letter-spacing: 0.5px;
-}
-.modal-table tr:nth-child(even) {
-  background: #f1f6fb;
-}
-.modal-table tr:nth-child(odd) {
-  background: #fff;
-}
-.modal-table .username {
-  color: #1976d2;
-  font-weight: 700;
-}
-.modal-overlay {
-  position: fixed;
-  top:0; left:0; right:0; bottom:0;
-  background: rgba(0,0,0,0.25);
-  z-index: 1000;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-.modal-content {
-  background: #fff;
-  border-radius: 16px;
-  padding: 32px 24px 24px 24px;
-  min-width: 320px;
-  max-width: 98vw;
-  max-height: 80vh;
-  overflow-y: auto;
-  position: relative;
-  box-shadow: 0 4px 32px 0 rgba(25, 118, 210, 0.13);
-}
-.modal-close {
-  position: absolute;
-  top: 12px;
-  right: 16px;
-  font-size: 1.5rem;
-  background: none;
-  border: none;
-  color: #888;
-  cursor: pointer;
-}
-.sidebar-nav-btn {
-  background: none;
-  border: none;
-  color: #1976d2;
-  font-size: 1.25em;
-  margin: 0 2px;
-  cursor: pointer;
-  padding: 2px 6px;
-  border-radius: 4px;
-  transition: background 0.1s;
-}
-.sidebar-nav-btn:disabled {
-  color: #b0b0b0;
-  cursor: not-allowed;
-  background: none;
+
+/* Mobile: up to 480px */
+@media (max-width: 480px) {
+  .dashboard-root {
+    flex-direction: column;
+    gap: 0;
+    margin: 60px 0 60px 0;
+  }
+  .dashboard-main, .dashboard-right {
+    max-width: 100vw;
+    margin: 12px 0;
+    border-radius: 12px;
+    box-shadow: 0 1px 8px 0 rgba(0,0,0,0.07);
+    padding: 12px 4vw;
+  }
+  .dashboard-main {
+    padding: 12px 4vw;
+  }
+  .dashboard-header h1 {
+    font-size: 1.2rem;
+  }
+  .status-badge {
+    font-size: 0.92rem;
+    padding: 5px 13px;
+  }
+  .dashboard-desc,
+  .dashboard-info,
+  .dashboard-info strong,
+  .participation-label,
+  .card-label {
+    font-size: 0.98rem;
+  }
+  .dashboard-cards {
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 18px;
+  }
+  .dashboard-card {
+    padding: 16px 10px;
+    min-width: 0;
+    font-size: 0.98rem;
+  }
+  .card-icon {
+    font-size: 1.7rem;
+    margin-right: 10px;
+  }
+  .card-value {
+    font-size: 1.2rem;
+  }
+  .dashboard-participation {
+    margin-bottom: 18px;
+  }
+  .participation-bar-bg {
+    height: 12px;
+  }
+  .dashboard-info {
+    gap: 8px;
+    margin-bottom: 18px;
+    font-size: 0.98rem;
+  }
+  .dashboard-right {
+    min-width: 0;
+    padding: 12px 4vw;
+    border-radius: 12px;
+    height: auto;
+  }
+  .right-title {
+    font-size: 1.05rem;
+    margin-bottom: 10px;
+  }
+  
+  .activity-list li {
+    font-size: 0.95rem;
+    margin-bottom: 10px;
+    padding: 7px 8px;
+    border-radius: 7px;
+  }
+  
+  .activity-time {
+    font-size: 0.85rem;
+    margin-right: 8px;
+    min-width: 54px;
+  }
+  .activity-date {
+    font-size: 0.78em;
+  }
+  .modal-content {
+    min-width: unset;
+    padding: 14px 4vw 14px 4vw;
+    border-radius: 10px;
+  }
+  .modal-table th, .modal-table td {
+    padding: 6px 4px;
+    font-size: 0.97rem;
+  }
+  .sidebar-nav-btn {
+    font-size: 1.05em;
+    padding: 1px 3px;
+  }
 }
