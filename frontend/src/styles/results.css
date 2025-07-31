@@ -13,6 +13,7 @@
   border: 1px solid #e5e7eb;
 }
 
+/* --- Header --- */
 .election-header {
   background: linear-gradient(90deg, #2563eb 0%, #059669 100%);
   color: #fff;
@@ -217,6 +218,29 @@
   background: #e0e7ff;
 }
 
+/* --- Chart Mode Toggle --- */
+.chart-mode-toggle {
+  text-align: center;
+  margin: 1.5em 0;
+}
+.chart-mode-btn {
+  background: #f3f3f3;
+  border: 1px solid #bbb;
+  color: #222;
+  padding: 0.5em 1.2em;
+  margin: 0 0.25em;
+  border-radius: 5px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: background 0.2s, color 0.2s;
+}
+.chart-mode-btn.active,
+.chart-mode-btn:hover {
+  background: #1976d2;
+  color: #fff;
+  border-color: #1976d2;
+}
+
 /* --- Main Results Section --- */
 .election-results {
   padding: 2.2rem 2.5rem;
@@ -353,7 +377,7 @@
   color: #fff;
 }
 
-/* --- Table View --- */
+/* --- Table View (optional, for completeness) --- */
 .table-section {
   margin-bottom: 2.5rem;
 }
@@ -586,5 +610,54 @@
   .footer-content {
     flex-direction: column;
     gap: 1.3rem;
+  }
+}
+
+/* --- Extra Responsive for ≤480px --- */
+@media (max-width: 480px) {
+  .election-header,
+  .election-results,
+  .election-footer {
+    padding: 0.7rem 0.3rem;
+  }
+  .header-main h1.election-title {
+    font-size: 1.2rem;
+  }
+  .winner-card {
+    padding: 1rem 0.5rem;
+    font-size: 0.96em;
+  }
+  .horizontal-chart .chart-row {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.5em;
+    padding: 0.5em 0.2em;
+  }
+  .row-candidate {
+    min-width: 0;
+    gap: 0.4em;
+  }
+  .party-logo {
+    width: 28px;
+    height: 28px;
+  }
+  .chart-bar {
+    height: 24px;
+    min-width: 40px;
+    font-size: 0.95em;
+  }
+  .bar-content {
+    padding: 0 0.5em;
+    font-size: 0.95em;
+  }
+  .footer-content {
+    gap: 0.8rem;
+  }
+  .legend-items {
+    gap: 0.7em;
+  }
+  .legend-color {
+    width: 14px;
+    height: 14px;
   }
 }
