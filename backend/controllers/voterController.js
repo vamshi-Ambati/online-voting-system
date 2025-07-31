@@ -8,10 +8,13 @@ dotenv.config();
 sgMail.setApiKey(process.env.SENDGRID_API_KEY);
 
 // Generate vote ID: username + 4-digit random number
+// Generate vote ID: first 4 chars of username (no spaces, uppercase) + 4-digit random number
 const generateVoteId = (username) => {
+  const base = username.replace(/\s+/g, '').toUpperCase().slice(0, 4);
   const randomNum = Math.floor(1000 + Math.random() * 9000); // 4-digit number
-  return `${username.toUpperCase()}${randomNum}`;
+  return `${base}${randomNum}`;
 };
+
 
 // Helper: Send welcome email with voteId using SendGrid
 const sendWelcomeEmail = async (toEmail, username, voteId) => {

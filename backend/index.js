@@ -1,22 +1,30 @@
 const express = require("express");
 const app = express();
 const cors = require("cors");
+const path = require('path'); // <-- Add this line
+
 app.use(cors());
+app.use(express.json());
+
 const voterRouter = require("./routes/voter");
 const candidateRouter = require("./routes/candidate");
 const voteRouter = require("./routes/vote");
-// const resultRoutes = require("./routes/result");
 const dashboardRouter = require("./routes/dashboard");
+const resultRouter = require('./routes/result');
 const { connectMongoDB } = require("./connection");
-app.use(express.json());
 
 connectMongoDB();
 
+// Serve static images from /public/img as /img
+app.use('/img', express.static(path.join(__dirname, 'public/img')));
+
+// API routes
 app.use("/voter", voterRouter);
 app.use("/api", candidateRouter);
 app.use("/api/votes", voteRouter);
-// app.use("/api/results", resultRoutes);
 app.use("/api/dashboard", dashboardRouter);
+app.use('/api/results', resultRouter);
+
 app.get("/", (req, res) => {
   res.send("Hello, World!");
 });
