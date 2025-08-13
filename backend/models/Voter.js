@@ -1,14 +1,32 @@
 const mongoose = require("mongoose");
 
-const voterSchema = new mongoose.Schema({
-  username: { type: String, required: true, unique: false },
-  email: { type: String, required: true, unique: true },
-  password: { type: String, required: true },
-  role: { type: String, enum: ["admin", "candidate"], required: true },
-  voteId: { type: String, required: true, unique: true },
-  createdAt: { type: Date, default: Date.now },
-});
+const voterSchema = new mongoose.Schema(
+  {
+    firstName: { type: String, required: true },
+    middleName: { type: String },
+    lastName: { type: String, required: true },
+    email: { type: String, required: true, unique: true },
+    password: { type: String, required: true },
+    role: {
+      type: String,
+      enum: ["voter", "admin"],
+      required: true,
+      default: "voter",
+    },
+    gender: {
+      type: String,
+      enum: ["male", "female", "other", "prefer-not-to-say"],
+    },
+    dob: { type: Date },
+    mobile: { type: String },
+    voterId: { type: String, unique: true },
+    hasVoted: {
+      type: Boolean,
+      default: false,
+    },
+    // isVerified: { type: Boolean, default: false },
+  },
+  { timestamps: true }
+);
 
-const voterModel = mongoose.model("Voter", voterSchema);
-
-module.exports = voterModel;
+module.exports = mongoose.model("Voter", voterSchema);

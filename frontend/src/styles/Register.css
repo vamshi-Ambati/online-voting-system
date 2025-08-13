@@ -1,165 +1,334 @@
 /* Register.css */
-.register {
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
-  height: 100vh;
+.register-container {
   display: flex;
   justify-content: center;
   align-items: center;
-  padding: 20px;
+  background-color: #f5f7fa;
 }
 
-.register-container {
-  background-color: white;
-  border-radius: 10px;
-  box-shadow: 0 14px 28px rgba(0,0,0,0.25), 0 10px 10px rgba(0,0,0,0.22);
-  padding: 40px;
+.register-wrapper {
   width: 100%;
-  max-width: 450px;
-  transition: all 0.3s ease;
+  max-width: 900px;
+  display: flex;
+  justify-content: center;
 }
 
-.register h1 {
+.register-card {
+  width: 100%;
+  background-color: white;
+  border-radius: 15px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.register-header {
+  background-color: #1a73e8;
+  color: white;
+  padding: 1.5rem;
   text-align: center;
-  margin-bottom: 30px;
-  color: #333;
-  font-weight: 600;
+  position: relative;
 }
 
-.input-group {
+.vote-icon {
+  font-size: 2rem;
+  margin-bottom: 0.5rem;
+}
+
+.register-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin-bottom: 0.25rem;
+}
+
+.register-subtitle {
+  font-size: 0.9rem;
+  opacity: 0.9;
+}
+
+.register-form {
+  padding: 1.5rem 2rem;
+}
+
+.form-row {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 0.5rem;
+}
+
+.form-field {
+  margin-bottom: 0.75rem;
+  flex: 1;
+}
+
+.form-field.half-width {
+  flex: 0.5;
+}
+
+.form-field.third-width {
+  flex: 0.33;
+}
+
+.form-label {
+  display: block;
+  margin-bottom: 0.25rem;
+  font-weight: 600;
+  color: #333;
+  font-size: 0.9rem;
+}
+
+.input-with-icon {
   position: relative;
-  margin-bottom: 25px;
 }
 
 .input-icon {
   position: absolute;
-  left: 15px;
+  left: 12px;
   top: 50%;
   transform: translateY(-50%);
-  color: #aaa;
-  z-index: 10;
+  color: #666;
+  font-size: 0.9rem;
 }
 
-.input-group input {
+.form-input {
   width: 100%;
-  padding: 15px 15px 15px 45px;
-  border: 2px solid #ddd;
-  border-radius: 8px;
-  font-size: 16px;
-  transition: all 0.3s;
-  box-sizing: border-box;
+  padding: 10px 12px 10px 40px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  transition: all 0.3s ease;
+  background-color: #f9fafc;
 }
 
-.input-group input:focus {
-  border-color: #6e8efb;
+.form-input:focus {
+  border-color: #1a73e8;
+  box-shadow: 0 0 0 2px rgba(26, 115, 232, 0.2);
   outline: none;
-  box-shadow: 0 0 0 3px rgba(110, 142, 251, 0.2);
+  background-color: white;
 }
 
-/* Role select styling */
-.role-select {
-  width: 100%;
-  padding: 15px 15px 15px 45px;
-  border: 2px solid #ddd;
-  border-radius: 8px;
-  font-size: 16px;
-  color: #555;
-  background: #fff;
-  transition: all 0.3s;
-  box-sizing: border-box;
-  appearance: none;
-  outline: none;
-  margin-top: 0;
-  /* Custom dropdown arrow */
-  background-image: url("data:image/svg+xml;charset=UTF-8,<svg width='20' height='20' viewBox='0 0 20 20' fill='gray' xmlns='http://www.w3.org/2000/svg'><path d='M5 8L10 13L15 8H5Z'/></svg>");
-  background-repeat: no-repeat;
-  background-position: right 15px center;
-  background-size: 18px 18px;
+.form-input.error {
+  border-color: #d32f2f;
 }
 
-.role-select:focus {
-  border-color: #6e8efb;
-  box-shadow: 0 0 0 3px rgba(110, 142, 251, 0.2);
+.error-message {
+  color: #d32f2f;
+  font-size: 0.8rem;
+  margin-top: 0.25rem;
 }
 
-.register-btn {
-  width: 100%;
-  padding: 15px;
-  background: linear-gradient(135deg, #6e8efb, #a777e3);
+.password-toggle-icon {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #666;
+  cursor: pointer;
+  font-size: 1rem;
+}
+
+.register-role-selection{
+  min-width: 120px;
+  max-width: 400px;
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.register-submit-button {
+  width: 30%;
+  padding: 12px;
+  background-color: #1a73e8;
   color: white;
   border: none;
-  border-radius: 8px;
-  font-size: 16px;
+  border-radius: 6px;
+  font-size: 0.9rem;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.3s;
+  transition: all 0.3s ease;
+  margin-top: 0.5rem;
+}
+
+.register-submit-button:hover {
+  background-color: #1557b0;
+}
+
+.register-submit-button:disabled {
+  background-color: #cccccc;
+  cursor: not-allowed;
+}
+
+.loading-content {
   display: flex;
-  justify-content: center;
   align-items: center;
-  gap: 8px;
+  justify-content: center;
+  gap: 0.5rem;
 }
 
-.register-btn:hover {
-  background: linear-gradient(135deg, #5d7df9, #9665e0);
-  transform: translateY(-2px);
-  box-shadow: 0 7px 14px rgba(50, 50, 93, 0.1), 0 3px 6px rgba(0, 0, 0, 0.08);
+.loading-spinner {
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-radius: 50%;
+  border-top: 2px solid white;
+  width: 14px;
+  height: 14px;
+  animation: spin 1s linear infinite;
 }
 
-.register-links {
-  margin-top: 25px;
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.success-message {
+  background-color: #e8f5e9;
+  border-radius: 6px;
+  padding: 1rem;
   text-align: center;
 }
 
-.register-links p {
-  color: #666;
+.success-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
 }
 
-.register-links a {
-  color: #6e8efb;
-  text-decoration: none;
+.success-icon {
+  color: #4caf50;
+  font-size: 2.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.success-text {
+  font-size: 1.1rem;
   font-weight: 600;
-  transition: color 0.3s;
+  color: #2e7d32;
+  margin-bottom: 0.25rem;
 }
 
-.register-links a:hover {
-  color: #5d7df9;
+.voter-id-display {
+  background-color: white;
+  padding: 0.75rem;
+  border-radius: 4px;
+  font-family: monospace;
+  font-size: 1rem;
+  font-weight: 700;
+  color: #1a73e8;
+  margin: 0.75rem 0;
+  border: 1px dashed #1a73e8;
 }
 
-/* Toastify custom styles */
-.Toastify__toast-container {
-  z-index: 9999 !important;
+.success-note {
+  color: #666;
+  margin-bottom: 0.25rem;
+  font-size: 0.9rem;
 }
 
-.Toastify__toast {
-  border-radius: 8px !important;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
+.redirect-text {
+  color: #888;
+  font-size: 0.85rem;
 }
 
-.Toastify__toast--success {
-  background-color: #d4edda !important;
-  color: #155724 !important;
-  border-left: 4px solid #28a745 !important;
+.form-footer {
+  margin-top: 1rem;
+  text-align: center;
 }
 
-.Toastify__toast--error {
-  background-color: #f8d7da !important;
-  color: #721c24 !important;
-  border-left: 4px solid #dc3545 !important;
+.footer-text {
+  color: #666;
+  font-size: 0.9rem;
 }
 
-/* Responsive Design */
-@media (max-width: 480px) {
+.register-link {
+  background: none;
+  border: none;
+  color: #1a73e8;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0;
+  text-decoration: underline;
+  font-size: 0.9rem;
+}
+
+.privacy-text {
+  color: #888;
+  font-size: 0.8rem;
+  margin-top: 0.75rem;
+}
+
+/* Responsive adjustments */
+@media (max-width: 992px) {
+  .register-form {
+    padding: 1.25rem;
+  }
+  
+  .form-row {
+    flex-direction: column;
+    gap: 0;
+  }
+  
+  .form-field, 
+  .form-field.half-width,
+  .form-field.third-width {
+    flex: 1;
+  }
+}
+
+@media (max-width: 768px) {
   .register-container {
-    padding: 30px;
+    padding: 0.5rem;
   }
-
-  .input-group input,
-  .role-select {
-    padding: 12px 12px 12px 40px;
-    font-size: 15px;
+  
+  .register-header {
+    padding: 1rem;
   }
-
-  .register-btn {
-    padding: 12px;
+  
+  .register-form {
+    padding: 1rem;
+  }
+  
+  .role-selection {
+    flex-direction: column;
+  }
+}
+@media (max-width: 576px) {
+  .register-card {
+    border-radius: 0;
+  }
+  
+  .register-header {
+    font-size: 1.25rem;
+  }
+  
+  .register-title {
+    font-size: 1.2rem;
+  }
+  
+  .register-subtitle {
+    font-size: 0.8rem;
+  }
+  
+  .form-input {
+    padding: 10px;
+    font-size: 0.85rem;
+  }
+  
+  .register-submit-button {
+    width: 100%;
+    margin-top: 1rem;
+  }
+}
+@media (max-width: 400px) {
+  .register-header {
+    font-size: 1.1rem;
+  }
+  .register-title {
+    font-size: 1rem;
+  }
+  .register-submit-button {
+    width: 100%;
+    padding: 10px;
+    font-size: 0.85rem;
   }
 }
