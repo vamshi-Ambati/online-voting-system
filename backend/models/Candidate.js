@@ -4,9 +4,8 @@ const candidateSchema = new mongoose.Schema(
   {
     name: { type: String, required: true },
     party: { type: String, required: true },
-    photoUrl: { type: String, required: true }, // Will store file path or URL
-    partySymbolUrl: { type: String, required: true }, // Will store file path or URL
-
+    photoUrl: { type: String, required: true },
+    partySymbolUrl: { type: String, required: true },
     email: { type: String },
     mobile: { type: String },
     address: { type: String },

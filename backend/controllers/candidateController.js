@@ -1,7 +1,7 @@
 const Candidate = require("../models/Candidate");
 const Voter = require("../models/Voter");
 
-const BASE_URL = process.env.BASE_URL || "http://localhost:5000";
+// const BASE_URL = process.env.BASE_URL || "http://localhost:3000";
 
 // Add candidate
 exports.addCandidate = async (req, res) => {
@@ -23,8 +23,8 @@ exports.addCandidate = async (req, res) => {
         .json({ message: "Photo and Party Symbol are required." });
     }
 
-    const photoPath = `${BASE_URL}/uploads/candidates/${req.files.photoUrl[0].filename}`;
-    const symbolPath = `${BASE_URL}/uploads/candidates/${req.files.partySymbolUrl[0].filename}`;
+    const photoPath = `/uploads/candidates/${req.files.photoUrl[0].filename}`;
+    const symbolPath = `/uploads/candidates/${req.files.partySymbolUrl.filename}`;
 
     const candidate = new Candidate({
       name,
@@ -51,10 +51,13 @@ exports.addCandidate = async (req, res) => {
   }
 };
 
-// Get candidates
+// Get all candidates
 exports.getCandidates = async (req, res) => {
   try {
     const candidates = await Candidate.find();
+    if (!candidates.length) {
+      return res.status(404).json({ message: "No candidates found" });
+    }
     res.status(200).json({ candidates });
   } catch (err) {
     res
@@ -63,7 +66,7 @@ exports.getCandidates = async (req, res) => {
   }
 };
 
-// Get voters
+// Get all voters
 exports.getAllVoters = async (req, res) => {
   try {
     const voters = await Voter.find({

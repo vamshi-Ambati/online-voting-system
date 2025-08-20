@@ -91,7 +91,7 @@ const Navbar = () => {
         <div className="logo-name">
           <NavLink to="/" onClick={handleNavClick} className="logo-link">
             <img src={voteImage} alt="Vote Logo" className="logo-img" />
-            <span className="logo-text">ONLINE VOTING SYSTEM</span>
+            <span className="logo-text"> SecureVote</span>
           </NavLink>
         </div>
 
@@ -202,8 +202,13 @@ const Navbar = () => {
                         </NavLink>
                       </li>
                       <li>
-                        <NavLink to="/admin-dashboard" onClick={handleNavClick}>
+                        <NavLink to="/dashboard" onClick={handleNavClick}>
                           Dashboard
+                        </NavLink>
+                      </li>
+                      <li>
+                        <NavLink to="/candidates" onClick={handleNavClick}>
+                          Candidates
                         </NavLink>
                       </li>
                     </>

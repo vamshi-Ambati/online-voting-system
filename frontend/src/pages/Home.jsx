@@ -1,321 +1,233 @@
-// import React from "react";
-// import { useNavigate } from "react-router-dom";
-// import "../styles/Home.css";
-
-// const Home = () => {
-//   const navigate = useNavigate();
-
-//   const handleGetStarted = (e) => {
-//     e.preventDefault();
-//     navigate("/candidates");
-//   };
-
-//   // Stats data
-//   const stats = [
-//     { value: "10,000+", label: "Verified Voters" },
-//     { value: "99.9%", label: "Uptime" },
-//     { value: "100%", label: "Audit Accuracy" },
-//     { value: "24/7", label: "Support" },
-//   ];
-
-//   // Testimonials data
-//   const testimonials = [
-//     {
-//       quote:
-//         "eVote made our student council elections smoother than ever before.",
-//       author: "University of Tech",
-//       role: "Student Affairs",
-//     },
-//     {
-//       quote:
-//         "The transparency features gave our members confidence in the voting process.",
-//       author: "National Labor Union",
-//       role: "Election Committee",
-//     },
-//     {
-//       quote:
-//         "Implementing eVote saved us 60% in election administration costs.",
-//       author: "City Municipal Office",
-//       role: "Elections Department",
-//     },
-//   ];
-
-//   return (
-//     <div className="home-container">
-//       {/* Hero Section */}
-//       <section className="hero">
-//         <div className="hero-content">
-//           <div className="hero-text">
-//             <h1>
-//               Modern Voting Solutions for{" "}
-//               <span className="brand-gradient">Democracy 2.0</span>
-//             </h1>
-//             <p className="hero-subtitle">
-//               Secure, transparent, and accessible online voting platform powered
-//               by blockchain technology.
-//               <br />
-//               <span className="highlight">
-//                 Your vote matters. Make it count with confidence.
-//               </span>
-//             </p>
-//             <div className="hero-cta">
-//               <button className="cta-btn-primary" onClick={handleGetStarted}>
-//                 Get Started
-//               </button>
-//               <button className="cta-btn-secondary">
-//                 Watch Demo <i className="fas fa-play-circle"></i>
-//               </button>
-//             </div>
-//           </div>
-//         </div>
-//         <div className="hero-image">
-//           <img
-//             src="https://img.freepik.com/free-vector/online-voting-concept-illustration_114360-8410.jpg"
-//             alt="Voting Illustration"
-//             className="hero-img"
-//           />
-//           <div className="floating-badge">
-//             <div className="badge-content">
-//               <span className="badge-icon">
-//                 <i className="fas fa-shield-alt"></i>
-//               </span>
-//               <span>ISO 27001 Certified</span>
-//             </div>
-//           </div>
-//         </div>
-//       </section>
-
-//       {/* Trust Badges */}
-//       <section className="trust-badges">
-//         <p>Trusted by organizations worldwide</p>
-//         <div className="badges-container">
-//           <img
-//             src="https://via.placeholder.com/120x40?text=UNICEF"
-//             alt="UNICEF"
-//           />
-//           <img src="https://via.placeholder.com/120x40?text=IEEE" alt="IEEE" />
-//           <img
-//             src="https://via.placeholder.com/120x40?text=Greenpeace"
-//             alt="Greenpeace"
-//           />
-//           <img src="https://via.placeholder.com/120x40?text=OSCE" alt="OSCE" />
-//         </div>
-//       </section>
-
-//       {/* Stats Section */}
-//       <section className="stats-section">
-//         <div className="stats-grid">
-//           {stats.map((stat, index) => (
-//             <div className="stat-card" key={index}>
-//               <h3>{stat.value}</h3>
-//               <p>{stat.label}</p>
-//             </div>
-//           ))}
-//         </div>
-//       </section>
-
-//       {/* Features Section */}
-//       <section className="features" id="features">
-//         <div className="section-header">
-//           <h2>
-//             Why Organizations Choose{" "}
-//             <span className="brand-gradient">eVote</span>
-//           </h2>
-//           <p className="section-subtitle">
-//             Enterprise-grade voting solutions with military-grade security
-//           </p>
-//         </div>
-//         <div className="features-grid">
-//           <div className="feature-card">
-//             <div className="feature-icon security">
-//               <i className="fas fa-fingerprint"></i>
-//             </div>
-//             <h3>Military-Grade Security</h3>
-//             <p>
-//               End-to-end encryption, multi-factor authentication, and blockchain
-//               verification protect every vote with the highest security
-//               standards.
-//             </p>
-//             <a href="#security" className="feature-link">
-//               Learn more <i className="fas fa-arrow-right"></i>
-//             </a>
-//           </div>
-//           <div className="feature-card">
-//             <div className="feature-icon accessibility">
-//               <i className="fas fa-universal-access"></i>
-//             </div>
-//             <h3>Universal Accessibility</h3>
-//             <p>
-//               WCAG 2.1 compliant interface with screen reader support, multiple
-//               language options, and mobile responsiveness for all voters.
-//             </p>
-//             <a href="#accessibility" className="feature-link">
-//               Learn more <i className="fas fa-arrow-right"></i>
-//             </a>
-//           </div>
-//           <div className="feature-card">
-//             <div className="feature-icon transparency">
-//               <i className="fas fa-search-dollar"></i>
-//             </div>
-//             <h3>Complete Transparency</h3>
-//             <p>
-//               Real-time auditing, voter-verifiable paper trails, and open-source
-//               algorithms ensure full transparency in the electoral process.
-//             </p>
-//             <a href="#transparency" className="feature-link">
-//               Learn more <i className="fas fa-arrow-right"></i>
-//             </a>
-//           </div>
-//           <div className="feature-card">
-//             <div className="feature-icon analytics">
-//               <i className="fas fa-chart-bar"></i>
-//             </div>
-//             <h3>Advanced Analytics</h3>
-//             <p>
-//               Comprehensive election analytics dashboard with demographic
-//               breakdowns, turnout statistics, and real-time result
-//               visualizations.
-//             </p>
-//             <a href="#analytics" className="feature-link">
-//               Learn more <i className="fas fa-arrow-right"></i>
-//             </a>
-//           </div>
-//           <div className="feature-card">
-//             <div className="feature-icon compliance">
-//               <i className="fas fa-balance-scale"></i>
-//             </div>
-//             <h3>Regulatory Compliance</h3>
-//             <p>
-//               Pre-configured compliance templates for GDPR, HIPAA, and election
-//               laws in 50+ countries with customizable rule engines.
-//             </p>
-//             <a href="#compliance" className="feature-link">
-//               Learn more <i className="fas fa-arrow-right"></i>
-//             </a>
-//           </div>
-//           <div className="feature-card">
-//             <div className="feature-icon support">
-//               <i className="fas fa-headset"></i>
-//             </div>
-//             <h3>Dedicated Support</h3>
-//             <p>
-//               24/7 election support with dedicated account managers,
-//               multi-lingual voter assistance, and on-call technical experts.
-//             </p>
-//             <a href="#support" className="feature-link">
-//               Learn more <i className="fas fa-arrow-right"></i>
-//             </a>
-//           </div>
-//         </div>
-//       </section>
-
-//       {/* Testimonials Section */}
-//       <section className="testimonials">
-//         <div className="section-header">
-//           <h2>Trusted by Organizations Worldwide</h2>
-//           <p className="section-subtitle">Don't just take our word for it</p>
-//         </div>
-//         <div className="testimonials-grid">
-//           {testimonials.map((testimonial, index) => (
-//             <div className="testimonial-card" key={index}>
-//               <div className="testimonial-quote">
-//                 <i className="fas fa-quote-left"></i>
-//                 <p>{testimonial.quote}</p>
-//               </div>
-//               <div className="testimonial-author">
-//                 <h4>{testimonial.author}</h4>
-//                 <p>{testimonial.role}</p>
-//               </div>
-//             </div>
-//           ))}
-//         </div>
-//       </section>
-
-//       {/* CTA Section */}
-//       <section className="cta-section">
-//         <div className="cta-content">
-//           <h2>Ready to Transform Your Voting Process?</h2>
-//           <p>Schedule a demo with our election specialists today</p>
-//           <div className="cta-buttons">
-//             <button className="cta-btn-primary" onClick={handleGetStarted}>
-//               Request Demo
-//             </button>
-//             <button className="cta-btn-outline">
-//               Download Whitepaper <i className="fas fa-download"></i>
-//             </button>
-//           </div>
-//         </div>
-//       </section>
-
-//       {/* Footer */}
-//       <footer className="footer">
-//         <div className="footer-content">
-//           <div className="footer-brand">
-//             <h3 className="brand-gradient">eVote</h3>
-//             <p>Democracy powered by technology</p>
-//             <div className="social-links">
-//               <a href="#twitter">
-//                 <i className="fab fa-twitter"></i>
-//               </a>
-//               <a href="#linkedin">
-//                 <i className="fab fa-linkedin"></i>
-//               </a>
-//               <a href="#github">
-//                 <i className="fab fa-github"></i>
-//               </a>
-//               <a href="#youtube">
-//                 <i className="fab fa-youtube"></i>
-//               </a>
-//             </div>
-//           </div>
-//           <div className="footer-links">
-//             <div className="links-column">
-//               <h4>Platform</h4>
-//               <a href="#features">Features</a>
-//               <a href="#security">Security</a>
-//               <a href="#pricing">Pricing</a>
-//               <a href="#integrations">Integrations</a>
-//             </div>
-//             <div className="links-column">
-//               <h4>Resources</h4>
-//               <a href="#documentation">Documentation</a>
-//               <a href="#whitepapers">Whitepapers</a>
-//               <a href="#blog">Blog</a>
-//               <a href="#webinars">Webinars</a>
-//             </div>
-//             <div className="links-column">
-//               <h4>Company</h4>
-//               <a href="#about">About Us</a>
-//               <a href="#careers">Careers</a>
-//               <a href="#press">Press</a>
-//               <a href="#contact">Contact</a>
-//             </div>
-//           </div>
-//         </div>
-//         <div className="footer-bottom">
-//           <p>
-//             &copy; {new Date().getFullYear()}{" "}
-//             <span className="brand-gradient">eVote Systems Inc.</span>. All
-//             rights reserved.
-//           </p>
-//           <div className="legal-links">
-//             <a href="#privacy">Privacy Policy</a>
-//             <a href="#terms">Terms of Service</a>
-//             <a href="#cookies">Cookie Policy</a>
-//           </div>
-//         </div>
-//       </footer>
-//     </div>
-//   );
-// };
-
-// export default Home;
-import React from 'react'
-
+import React, { useState } from "react";
+import "../styles/Home.css";
+import { useNavigate } from "react-router-dom";
 const Home = () => {
-  return (
-    <div>Home</div>
-  )
-}
+  const [email, setEmail] = useState("");
+  const navigate = useNavigate();
 
-export default Home
+  const handleSubscribe = (e) => {
+    e.preventDefault();
+    alert(`Thank you for subscribing with: ${email}`);
+    setEmail("");
+  };
+  const handleGetStarted = () => {
+    navigate("/register");
+  };
+  return (
+    <div className="voting-app">
+      {/* Hero Section */}
+      <section id="home" className="hero">
+        <div className="hero-content">
+          <h1>Modern, Secure Online Voting</h1>
+          <p>
+            SecureVote provides a transparent, accessible, and verifiable voting
+            platform for organizations and institutions.
+          </p>
+          <div className="hero-buttons">
+            <button className="cta-button" onClick={handleGetStarted}>
+              Get Started
+            </button>
+            <button className="secondary-button">View Demo</button>
+          </div>
+        </div>
+        <div className="hero-image">
+          <div className="voting-illustration">
+            <div className="voting-card">
+              <div className="vote-checkmark">✓</div>
+            </div>
+            <div className="shield-icon">🛡️</div>
+            <div className="lock-icon">🔒</div>
+          </div>
+        </div>
+      </section>
+
+      {/* Features Section */}
+      <section id="features" className="features">
+        <div className="container">
+          <h2>Why Choose SecureVote?</h2>
+          <div className="features-grid">
+            {/* <div className="feature-card">
+              <div className="feature-icon">
+                <i className="fas fa-shield-alt"></i>
+              </div>
+              <h3>Military-Grade Security</h3>
+              <p>
+                End-to-end encryption and blockchain technology ensure your vote
+                remains secure and anonymous.
+              </p>
+            </div> */}
+            <div className="feature-card">
+              <div className="feature-icon">
+                <i className="fas fa-check-circle"></i>
+              </div>
+              <h3>Verifiable Results</h3>
+              <p>
+                Verify your vote was counted correctly without compromising
+                anonymity.
+              </p>
+            </div>
+            <div className="feature-card">
+              <div className="feature-icon">
+                <i className="fas fa-mobile-alt"></i>
+              </div>
+              <h3>Mobile Accessibility</h3>
+              <p>Vote from anywhere using our responsive mobile platform.</p>
+            </div>
+            <div className="feature-card">
+              <div className="feature-icon">
+                <i className="fas fa-chart-bar"></i>
+              </div>
+              <h3>Real-time Analytics</h3>
+              <p>
+                Monitor election progress with live result tracking and
+                analytics.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Security Section */}
+      <section className="security">
+        <div className="container">
+          <div className="security-content">
+            <div className="security-text">
+              <h2>Advanced Security Measures</h2>
+              <p>
+                Our platform utilizes cutting-edge technology to ensure the
+                integrity of every election:
+              </p>
+              <ul>
+                {/* <li>
+                  <i className="fas fa-fingerprint"></i> Multi-factor
+                  authentication
+                </li>
+                <li>
+                  <i className="fas fa-lock"></i> Blockchain-based vote
+                  recording
+                </li> */}
+                <li>
+                  <i className="fas fa-user-shield"></i> Voter identity
+                  protection
+                </li>
+                <li>
+                  <i className="fas fa-clipboard-check"></i> Transparent audit
+                  trails
+                </li>
+              </ul>
+            </div>
+            <div className="security-visual">
+              <div className="encryption-animation">
+                <div className="data-block">Vote Data</div>
+                <div className="encryption-process">
+                  <i className="fas fa-long-arrow-alt-right"></i>
+                  <div className="lock-icon">🔒</div>
+                  <i className="fas fa-long-arrow-alt-right"></i>
+                </div>
+                <div className="encrypted-block">Encrypted</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* CTA Section */}
+      {/* <section className="cta">
+        <div className="container">
+          <h2>Ready to Modernize Your Voting Process?</h2>
+          <p>
+            Join thousands of organizations that trust SecureVote for their
+            elections.
+          </p>
+          <button className="cta-button">Start Free Trial</button>
+        </div>
+      </section> */}
+
+      {/* Newsletter Section */}
+      <section className="newsletter">
+        <div className="container">
+          <h2>Stay Updated</h2>
+          <p>
+            Subscribe to our newsletter for updates on new features and election
+            best practices.
+          </p>
+          <form onSubmit={handleSubscribe} className="subscribe-form">
+            <input
+              type="email"
+              placeholder="Enter your email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+            />
+            <button type="submit">Subscribe</button>
+          </form>
+        </div>
+      </section>
+
+      {/* Footer */}
+      <footer className="footer">
+        <div className="container">
+          <div className="footer-content">
+            <div className="footer-section">
+              <div className="logo">
+                <i className="fas fa-vote-yea"></i>
+                <span>SecureVote</span>
+              </div>
+              <p>
+                Making democratic processes accessible, secure, and transparent
+                for everyone.
+              </p>
+            </div>
+            <div className="footer-section">
+              <h3>Company</h3>
+              <ul>
+                <li>
+                  <a href="#about">About Us</a>
+                </li>
+                <li>
+                  <a href="#careers">Careers</a>
+                </li>
+                <li>
+                  <a href="#contact">Contact</a>
+                </li>
+              </ul>
+            </div>
+            <div className="footer-section">
+              <h3>Resources</h3>
+              <ul>
+                <li>
+                  <a href="#blog">Blog</a>
+                </li>
+                <li>
+                  <a href="#docs">Documentation</a>
+                </li>
+                <li>
+                  <a href="#support">Support</a>
+                </li>
+              </ul>
+            </div>
+            <div className="footer-section">
+              <h3>Legal</h3>
+              <ul>
+                <li>
+                  <a href="#privacy">Privacy Policy</a>
+                </li>
+                <li>
+                  <a href="#terms">Terms of Service</a>
+                </li>
+                <li>
+                  <a href="#compliance">Compliance</a>
+                </li>
+              </ul>
+            </div>
+          </div>
+          <div className="footer-bottom">
+            <p>&copy; 2023 SecureVote. All rights reserved.</p>
+          </div>
+        </div>
+      </footer>
+    </div>
+  );
+};
+
+export default Home;

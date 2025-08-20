@@ -3,7 +3,6 @@ import { toast } from "react-toastify";
 import { FiPlus, FiUsers, FiList, FiUpload, FiX } from "react-icons/fi";
 import "../styles/candidates.css";
 import apiUrl from "../apiUrl";
-import voteImage from "/images/vote2.png";
 
 const Candidates = () => {
   const [candidates, setCandidates] = useState([]);
@@ -14,8 +13,8 @@ const Candidates = () => {
   const [newCandidate, setNewCandidate] = useState({
     name: "",
     party: "",
-    partySymbolUrl: "",
-    photoUrl: "",
+    photoUrl: null, // file
+    partySymbolUrl: null, // file
     email: "",
     mobile: "",
     address: "",
@@ -32,6 +31,7 @@ const Candidates = () => {
     role: "voter",
   };
 
+  // Fetch candidates
   const getCandidates = useCallback(async () => {
     try {
       const response = await fetch(`${apiUrl}/api/candidates/getCandidates`);
@@ -45,6 +45,7 @@ const Candidates = () => {
     }
   }, []);
 
+  // Fetch voters
   const getVoters = useCallback(async () => {
     try {
       const response = await fetch(`${apiUrl}/api/candidates/getAllVoters`);
@@ -61,46 +62,47 @@ const Candidates = () => {
   useEffect(() => {
     if (userData.id) {
       const votedId = localStorage.getItem(`votedCandidateId_${userData.id}`);
-      if (votedId) {
-        setVotedCandidateId(votedId);
-      }
+      if (votedId) setVotedCandidateId(votedId);
     }
-
-    if (userData.role === "voter") {
-      getCandidates();
-    }
+    if (userData.role === "voter") getCandidates();
   }, [userData.id, userData.role, getCandidates]);
 
+  // Preview image handler
   const handleImagePreview = (e, type) => {
     const file = e.target.files[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        if (type === "photo") {
-          setPreviewImage(reader.result);
-          setNewCandidate({ ...newCandidate, photoUrl: file });
-        } else {
-          setPreviewSymbol(reader.result);
-          setNewCandidate({ ...newCandidate, partySymbolUrl: file });
-        }
-      };
-      reader.readAsDataURL(file);
-    }
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      if (type === "photo") {
+        setPreviewImage(reader.result);
+        setNewCandidate((prev) => ({ ...prev, photoUrl: file }));
+      } else {
+        setPreviewSymbol(reader.result);
+        setNewCandidate((prev) => ({ ...prev, partySymbolUrl: file }));
+      }
+    };
+    reader.readAsDataURL(file);
   };
 
+  // Input change handler for text inputs
   const handleInputChange = (e) => {
-    setNewCandidate({
-      ...newCandidate,
-      [e.target.name]: e.target.value,
-    });
+    const { name, value } = e.target;
+    setNewCandidate((prev) => ({ ...prev, [name]: value }));
   };
 
+  // Add candidate submission
   const handleAddCandidate = async (e) => {
     e.preventDefault();
+    if (!newCandidate.photoUrl || !newCandidate.partySymbolUrl) {
+      toast.error("Candidate photo and party symbol are required.");
+      return;
+    }
 
     const formData = new FormData();
     Object.entries(newCandidate).forEach(([key, value]) => {
-      if (value) formData.append(key, value);
+      if (value) {
+        formData.append(key, value);
+      }
     });
 
     try {
@@ -108,15 +110,15 @@ const Candidates = () => {
         method: "POST",
         body: formData,
       });
-
       const data = await response.json();
       if (response.ok) {
         toast.success(data.message || "Candidate added successfully!");
+        // Reset form
         setNewCandidate({
           name: "",
           party: "",
-          partySymbolUrl: "",
-          photoUrl: "",
+          photoUrl: null,
+          partySymbolUrl: null,
           email: "",
           mobile: "",
           address: "",
@@ -135,6 +137,7 @@ const Candidates = () => {
     }
   };
 
+  // Vote button handler
   const handleVoteBtn = async (candidateId, votedFor) => {
     const candidate = candidates.find((c) => c._id === candidateId);
     if (!candidate) return;
@@ -186,33 +189,13 @@ const Candidates = () => {
     setLoadingVote(false);
   };
 
-  // Fixed getImageUrl function to handle possible leading slash and avoid double slash
-  // const getImageUrl = (url) => {
-  //   if (!url) return "";
-  //   if (url.startsWith("http://") || url.startsWith("https://")) {
-  //     return url;
-  //   }
-  //   // Remove leading slash if present to avoid double slash with apiUrl
-  //   const cleanedUrl = url.startsWith("/") ? url.slice(1) : url;
-  //   // Remove trailing slash from apiUrl if present to avoid double slashes
-  //   const baseUrl = apiUrl.endsWith("/") ? apiUrl.slice(0, -1) : apiUrl;
-  //   return `${baseUrl}/${cleanedUrl}`;
-  // };
+  // Utility for fixed image URL handling (avoid double slash)
   const getImageUrl = (url) => {
     if (!url) return "";
-
-    // If already a full URL (http/https/localhost)
-    if (/^https?:\/\//.test(url) || url.startsWith("http://localhost")) {
-      return url;
-    }
-
-    // Handle relative paths
-    let correctedUrl = url.replace(/\\/g, "/");
-    if (!correctedUrl.startsWith("/")) {
-      correctedUrl = "/" + correctedUrl;
-    }
-
-    return `${apiUrl}${correctedUrl}`;
+    if (/^https?:\/\//.test(url)) return url;
+    let cleanedUrl = url.replace(/\\/g, "/");
+    if (!cleanedUrl.startsWith("/")) cleanedUrl = "/" + cleanedUrl;
+    return `${apiUrl}${cleanedUrl}`.replace(/([^:]\/)\/+/g, "$1");
   };
 
   return (
@@ -234,7 +217,7 @@ const Candidates = () => {
         </div>
       )}
 
-      {/* Add Candidate Form (Admin only) */}
+      {/* Add Candidate Form */}
       {userData.role === "admin" && showAddForm && (
         <div className="form-container">
           <div className="form-header">
@@ -245,7 +228,6 @@ const Candidates = () => {
           </div>
           <form onSubmit={handleAddCandidate}>
             <div className="form-grid">
-              {/* Basic Info */}
               <div className="form-group">
                 <label htmlFor="name">Full Name*</label>
                 <input
@@ -272,7 +254,6 @@ const Candidates = () => {
                 />
               </div>
 
-              {/* Image Uploads - 2 columns */}
               <div className="form-group">
                 <label htmlFor="photoUrl">Candidate Photo*</label>
                 <div className="file-upload-wrapper">
@@ -329,7 +310,6 @@ const Candidates = () => {
                 </div>
               </div>
 
-              {/* Contact Info */}
               <div className="form-group">
                 <label htmlFor="email">Email</label>
                 <input
@@ -354,7 +334,6 @@ const Candidates = () => {
                 />
               </div>
 
-              {/* Address and Agenda in same row */}
               <div className="form-group">
                 <label htmlFor="address">Address</label>
                 <input
@@ -380,7 +359,6 @@ const Candidates = () => {
                 />
               </div>
 
-              {/* Education and Experience in same row */}
               <div className="form-group">
                 <label htmlFor="education">Education</label>
                 <input
@@ -405,6 +383,7 @@ const Candidates = () => {
                 />
               </div>
             </div>
+
             <div className="form-actions">
               <button type="submit" className="submit-btn">
                 Add Candidate
@@ -466,7 +445,7 @@ const Candidates = () => {
         </div>
       )}
 
-      {/* Candidates display - different views for admin and voter */}
+      {/* Candidates display */}
       {(showCandidates || userData.role === "voter") && (
         <div className="candidates-list">
           <h3>
