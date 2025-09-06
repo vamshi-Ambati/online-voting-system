@@ -1,24 +1,20 @@
-const voteModel = require("../models/Vote");
+const UserModel = require("../models/User");
+const VoteModel = require("../models/Vote");
 
-const handleCastVote = async (req, res) => {
+const castVote = async (req, res) => {
   const { voterId, voter_Name, candidateId, votedFor } = req.body;
-  console.log("Received vote request:", req.body);
 
-  if (!voterId || !candidateId || !voter_Name || !votedFor) {
-    return res
-      .status(400)
-      .json({ message: "Voter ID, name, and Candidate ID are required." });
+  if (!voterId || !voter_Name || !candidateId || !votedFor) {
+    return res.status(400).json({ message: "Missing required vote fields." });
   }
 
   try {
-    // Check if voter has already voted
-    const existingVote = await voteModel.findOne({ voterId });
+    const existingVote = await VoteModel.findOne({ voterId });
     if (existingVote) {
       return res.status(400).json({ message: "You have already voted." });
     }
 
-    // Save the vote
-    const newVote = new voteModel({
+    const newVote = new VoteModel({
       voterId,
       voter_Name,
       candidateId,
@@ -26,12 +22,20 @@ const handleCastVote = async (req, res) => {
     });
     await newVote.save();
 
-    res.status(201).json({ message: "Vote cast successfully!" });
-  } catch (err) {
-    res.status(500).json({ message: "Server error while casting vote." });
+    // Update user's vote status
+    await UserModel.findByIdAndUpdate(
+      voterId,
+      { hasVoted: true },
+      { new: true }
+    );
+
+    return res.status(201).json({ message: "Vote cast successfully!" });
+  } catch (error) {
+    console.error("Error casting vote:", error);
+    return res
+      .status(500)
+      .json({ message: "Server error while casting vote." });
   }
 };
 
-module.exports = {
-  handleCastVote,
-};
+module.exports =  castVote ;

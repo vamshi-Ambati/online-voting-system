@@ -12,6 +12,7 @@ import {
   FaVenusMars,
   FaCalendarAlt,
   FaMobileAlt,
+  FaCamera,
 } from "react-icons/fa";
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
@@ -31,9 +32,12 @@ export default function VotingRegister() {
     gender: "",
     dob: "",
     mobile: "",
+    pin: "",
   });
+  const [photo, setPhoto] = useState(null); // State for the photo file
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [showPin, setShowPin] = useState(false);
   const [errors, setErrors] = useState({});
   const [isLoading, setIsLoading] = useState(false);
   const [registerSuccess, setRegisterSuccess] = useState(false);
@@ -48,6 +52,14 @@ export default function VotingRegister() {
 
     if (errors[name]) {
       setErrors((prev) => ({ ...prev, [name]: "" }));
+    }
+  };
+
+  // Handle file input change
+  const handleFileChange = (e) => {
+    setPhoto(e.target.files[0]);
+    if (errors.photo) {
+      setErrors((prev) => ({ ...prev, photo: "" }));
     }
   };
 
@@ -98,6 +110,19 @@ export default function VotingRegister() {
       newErrors.mobile = "Please enter a valid 10-digit mobile number";
     }
 
+    if (!photo) {
+      newErrors.photo = "Photo is required";
+    }
+
+    // Validate admin PIN only if role is admin
+    if (formData.role === "admin") {
+      if (!formData.pin) {
+        newErrors.pin = "Admin PIN is required";
+      } else if (formData.pin !== "vamshi") {
+        newErrors.pin = "Incorrect PIN";
+      }
+    }
+
     return newErrors;
   };
 
@@ -108,46 +133,36 @@ export default function VotingRegister() {
       setErrors(formErrors);
       return;
     }
-
     setIsLoading(true);
 
+    // Create a FormData object to send the form data and the file
+    const data = new FormData();
+    for (const key in formData) {
+      // Exclude confirmPassword from the data sent to the backend
+      if (key !== "confirmPassword") {
+        data.append(key, formData[key]);
+      }
+    }
+    // Append the photo file
+    data.append("photo", photo);
+
     try {
+      // Fetch request using the FormData object
       const response = await fetch(`${apiUrl}/voter/register`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          ...formData,
-          confirmPassword: undefined,
-        }),
+        // No 'Content-Type' header needed; the browser sets it automatically for FormData
+        body: data,
       });
 
-      const data = await response.json();
+      const responseData = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.message || "Registration failed");
+        throw new Error(responseData.message || "Registration failed");
       }
-
-      // // Store user data in localStorage
-      // const userData = {
-      //   id: data.id,
-      //   firstName: formData.firstName,
-      //   middleName: formData.middleName,
-      //   lastName: formData.lastName,
-      //   email: formData.email,
-      //   role: formData.role,
-      //   gender: formData.gender,
-      //   dob: formData.dob,
-      //   mobile: formData.mobile,
-      //   voterId: data.voterId || null,
-      // };
-      // localStorage.setItem("userData", JSON.stringify(userData));
 
       setRegisterSuccess(true);
       if (formData.role === "voter") {
-        setGeneratedVoterId(data.voterId);
-        // toast.success(
-        //   `Registration successful! Your Voter ID: ${data.voterId}`
-        // );
+        setGeneratedVoterId(responseData.voterId);
       } else {
         toast.success("Admin registration complete!");
       }
@@ -155,10 +170,12 @@ export default function VotingRegister() {
       setTimeout(() => navigate("/login"), 5000);
     } catch (error) {
       console.error("Registration error:", error);
-
       if (error.message.includes("Email already registered")) {
         toast.error("This email is already in use");
         setErrors({ email: "Email already registered" });
+      } else if (error.message.includes("Mobile number already registered")) {
+        toast.error("This mobile number is already in use");
+        setErrors({ mobile: "Mobile number already registered" });
       } else if (error.message.includes("unique Voter ID")) {
         toast.error("Please try registering again");
       } else {
@@ -345,6 +362,30 @@ export default function VotingRegister() {
                 </div>
 
                 <div className="form-row">
+                  <div className="form-field full-width">
+                    <label htmlFor="photo" className="form-label">
+                      Upload Photo*
+                    </label>
+                    <div className="input-with-icon">
+                      <FaCamera className="input-icon" />
+                      <input
+                        type="file"
+                        id="photo"
+                        name="photo"
+                        onChange={handleFileChange}
+                        className={`form-input-file ${
+                          errors.photo ? "error" : ""
+                        }`}
+                        accept="image/*"
+                      />
+                    </div>
+                    {errors.photo && (
+                      <div className="error-message">{errors.photo}</div>
+                    )}
+                  </div>
+                </div>
+
+                <div className="form-row">
                   <div className="form-field third-width">
                     <label htmlFor="email" className="form-label">
                       Email Address*
@@ -449,7 +490,6 @@ export default function VotingRegister() {
                         <span>Voter</span>
                       </label>
                     </div>
-
                     <div
                       className={`role-option ${
                         formData.role === "admin" ? "selected" : ""
@@ -471,6 +511,39 @@ export default function VotingRegister() {
                     </div>
                   </div>
                 </div>
+
+                {/* Show admin PIN input field only when role is admin */}
+                {formData.role === "admin" && (
+                  <div className="form-row">
+                    <div className="form-field third-width">
+                      <label htmlFor="pin" className="form-label">
+                        Admin PIN*
+                      </label>
+                      <div className="input-with-icon">
+                        <FaLock className="input-icon" />
+                        <input
+                          type={showPin ? "text" : "password"}
+                          id="pin"
+                          name="pin"
+                          value={formData.pin}
+                          onChange={handleInputChange}
+                          className={`form-input ${errors.pin ? "error" : ""}`}
+                          placeholder="Enter admin PIN"
+                        />
+                        <span
+                          className="password-toggle-icon"
+                          onClick={() => setShowPin(!showPin)}
+                          style={{ cursor: "pointer" }}
+                        >
+                          {showPin ? <FaEyeSlash /> : <FaEye />}
+                        </span>
+                      </div>
+                      {errors.pin && (
+                        <div className="error-message">{errors.pin}</div>
+                      )}
+                    </div>
+                  </div>
+                )}
 
                 <button
                   type="submit"

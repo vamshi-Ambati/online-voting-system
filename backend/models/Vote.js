@@ -2,24 +2,19 @@ const mongoose = require("mongoose");
 
 const voteSchema = new mongoose.Schema({
   voterId: {
-    type: String, // Use String if your IDs are not MongoDB ObjectIds
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Voter",
     required: true,
-    unique: true, // Each voter can only vote once
+    unique: true,
   },
-  voter_Name: {
-    type: String,
-    required: true,
-  },
+  voter_Name: { type: String, required: true },
   candidateId: {
-    type: String, // Use String if your IDs are not MongoDB ObjectIds
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Candidate",
     required: true,
   },
-  votedFor: {
-    type: String,
-    required: true,
-  },
-  timestamp: { type: Date, default: Date.now },
+  votedFor: { type: String, required: true },
+  votedAt: { type: Date, default: Date.now },
 });
 
-const Vote = mongoose.model("Vote", voteSchema);
-module.exports = Vote;
+module.exports = mongoose.model("Vote", voteSchema);

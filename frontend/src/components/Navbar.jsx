@@ -123,6 +123,11 @@ const Navbar = () => {
                         Candidates
                       </NavLink>
                     </li>
+                    {/* <li>
+                      <NavLink to="/polls" onClick={handleNavClick}>
+                        Polls
+                      </NavLink>
+                    </li> */}
                   </>
                 ) : (
                   <>
@@ -136,6 +141,11 @@ const Navbar = () => {
                         Dashboard
                       </NavLink>
                     </li>
+                    {/* <li>
+                      <NavLink to="/polls" onClick={handleNavClick}>
+                        Polls
+                      </NavLink>
+                    </li> */}
                   </>
                 )}
               </>

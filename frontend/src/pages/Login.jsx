@@ -20,7 +20,6 @@ export default function VotingLogin() {
   const [formData, setFormData] = useState({
     credential: "",
     password: "",
-    rememberMe: false,
     role: "voter",
   });
   const [showPassword, setShowPassword] = useState(false);
@@ -29,10 +28,10 @@ export default function VotingLogin() {
   const [loginSuccess, setLoginSuccess] = useState(false);
 
   const handleInputChange = (e) => {
-    const { name, value, type, checked } = e.target;
+    const { name, value } = e.target;
     setFormData((prev) => ({
       ...prev,
-      [name]: type === "checkbox" ? checked : value,
+      [name]: value,
     }));
 
     if (errors[name]) {
@@ -64,84 +63,77 @@ export default function VotingLogin() {
     return newErrors;
   };
 
-const handleSubmit = async (e) => {
-  e.preventDefault();
-  const validationErrors = validateForm();
-  if (Object.keys(validationErrors).length > 0) {
-    setErrors(validationErrors);
-    return;
-  }
-
-  setIsLoading(true);
-  setErrors({});
-
-  try {
-    const requestBody = {
-      password: formData.password,
-      role: formData.role,
-    };
-
-    if (formData.role === "admin") {
-      requestBody.email = formData.credential;
-    } else {
-      requestBody.voterId = formData.credential;
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    const validationErrors = validateForm();
+    if (Object.keys(validationErrors).length > 0) {
+      setErrors(validationErrors);
+      return;
     }
 
-    const response = await fetch(`${apiUrl}/voter/login`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(requestBody),
-    });
+    setIsLoading(true);
+    setErrors({});
 
-    const data = await response.json();
+    try {
+      const requestBody = {
+        password: formData.password,
+        role: formData.role,
+      };
 
-    if (!response.ok) {
-      throw new Error(data.message || "Login failed");
-    }
+      if (formData.role === "admin") {
+        requestBody.email = formData.credential;
+      } else {
+        requestBody.voterId = formData.credential;
+      }
 
-    // Store authentication data
-    const storage = formData.rememberMe ? localStorage : sessionStorage;
-    storage.setItem("authToken", data.token);
-
-    // Store complete user data including mobile, gender, and dob
-    storage.setItem(
-      "userData",
-      JSON.stringify({
-        _id: data.user.id, // Changed from 'id' to '_id' for consistency
-        firstName: data.user.firstName,
-        middleName: data.user.middleName || "", // Handle potential undefined
-        lastName: data.user.lastName,
-        email: data.user.email,
-        role: data.user.role,
-        gender: data.user.gender || "", // Handle potential undefined
-        dob: data.user.dob || "", // Handle potential undefined
-        mobile: data.user.mobile || "", // Handle potential undefined
-        voterId: data.user.voterId || "", // Handle potential undefined
-      })
-    );
-
-    setLoginSuccess(true);
-    // toast.success("Login successful!");
-
-    setTimeout(() => {
-      navigate(formData.role === "admin" ? "/dashboard" : "/dashboard");
-    }, 1500);
-  } catch (error) {
-    console.error("Login error:", error);
-    toast.error(error.message || "An error occurred during login");
-
-    if (error.message.includes("credentials")) {
-      setErrors({
-        credential: "Invalid credentials",
-        password: "Invalid credentials",
+      const response = await fetch(`${apiUrl}/voter/login`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(requestBody),
       });
+
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.message || "Login failed");
+      }
+
+      // Always save token and user in localStorage
+      localStorage.setItem("authToken", data.token);
+      localStorage.setItem(
+        "userData",
+        JSON.stringify({
+          _id: data.user.id,
+          firstName: data.user.firstName,
+          middleName: data.user.middleName || "",
+          lastName: data.user.lastName,
+          email: data.user.email,
+          role: data.user.role,
+          gender: data.user.gender || "",
+          dob: data.user.dob || "",
+          mobile: data.user.mobile || "",
+          voterId: data.user.voterId || "",
+        })
+      );
+
+      setLoginSuccess(true);
+
+      setTimeout(() => {
+        navigate("/dashboard");
+      }, 1500);
+    } catch (error) {
+      console.error("Login error:", error);
+      toast.error(error.message || "An error occurred during login");
+
+      if (error.message.includes("credentials")) {
+        setErrors({
+          credential: "Invalid credentials",
+          password: "Invalid credentials",
+        });
+      }
+    } finally {
+      setIsLoading(false);
     }
-  } finally {
-    setIsLoading(false);
-  }
-};
+  };
 
   return (
     <div className="login-container">
@@ -255,16 +247,6 @@ const handleSubmit = async (e) => {
               </div>
 
               <div className="form-options">
-                <label className="remember-me">
-                  <input
-                    type="checkbox"
-                    name="rememberMe"
-                    checked={formData.rememberMe}
-                    onChange={handleInputChange}
-                    className="remember-checkbox"
-                  />
-                  <span className="remember-text">Remember me</span>
-                </label>
                 <button
                   type="button"
                   className="forgot-password"

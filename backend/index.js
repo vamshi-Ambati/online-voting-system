@@ -29,11 +29,13 @@ const voterRouter = require("./routes/voter");
 const candidateRouter = require("./routes/candidate");
 const voteRouter = require("./routes/vote");
 const resultRouter = require("./routes/result");
+const electionsRouter = require("./routes/elections");
 
 app.use("/voter", voterRouter);
 app.use("/api/candidates", candidateRouter());
 app.use("/api/votes", voteRouter);
 app.use("/api/results", resultRouter);
+app.use("/api/elections", electionsRouter);
 
 // Health check
 app.get("/health", (req, res) => {

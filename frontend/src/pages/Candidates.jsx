@@ -13,8 +13,8 @@ const Candidates = () => {
   const [newCandidate, setNewCandidate] = useState({
     name: "",
     party: "",
-    photoUrl: null, // file
-    partySymbolUrl: null, // file
+    photoUrl: null,
+    partySymbolUrl: null,
     email: "",
     mobile: "",
     address: "",
@@ -60,12 +60,12 @@ const Candidates = () => {
   }, []);
 
   useEffect(() => {
-    if (userData.id) {
-      const votedId = localStorage.getItem(`votedCandidateId_${userData.id}`);
+    if (userData._id) {
+      const votedId = localStorage.getItem(`votedCandidateId_${userData._id}`);
       if (votedId) setVotedCandidateId(votedId);
     }
     if (userData.role === "voter") getCandidates();
-  }, [userData.id, userData.role, getCandidates]);
+  }, [userData._id, userData.role, getCandidates]);
 
   // Preview image handler
   const handleImagePreview = (e, type) => {
@@ -113,7 +113,6 @@ const Candidates = () => {
       const data = await response.json();
       if (response.ok) {
         toast.success(data.message || "Candidate added successfully!");
-        // Reset form
         setNewCandidate({
           name: "",
           party: "",
@@ -149,13 +148,13 @@ const Candidates = () => {
     )
       return;
 
-    if (!userData || !userData.id) {
+    if (!userData || !userData._id) {
       toast.error("You must be logged in as a voter to vote.");
       return;
     }
 
     const votedCandidateIdForUser = localStorage.getItem(
-      `votedCandidateId_${userData.id}`
+      `votedCandidateId_${userData._id}`
     );
     if (votedCandidateIdForUser) {
       toast.info("You have already voted.");
@@ -169,8 +168,13 @@ const Candidates = () => {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           candidateId,
-          voterId: userData.id,
-          voter_Name: userData.username,
+          voterId: userData._id, // use _id here
+          voter_Name:
+            userData.firstName +
+            " " +
+            (userData.middleName || "") +
+            " " +
+            userData.lastName,
           votedFor,
         }),
       });
@@ -179,7 +183,7 @@ const Candidates = () => {
       if (response.ok) {
         toast.success(data.message || `Vote cast successfully!`);
         setVotedCandidateId(candidateId);
-        localStorage.setItem(`votedCandidateId_${userData.id}`, candidateId);
+        localStorage.setItem(`votedCandidateId_${userData._id}`, candidateId);
       } else {
         toast.error(data.message || "Failed to cast vote.");
       }

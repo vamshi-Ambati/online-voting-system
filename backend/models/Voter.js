@@ -18,8 +18,9 @@ const voterSchema = new mongoose.Schema(
       enum: ["male", "female", "other", "prefer-not-to-say"],
     },
     dob: { type: Date },
-    mobile: { type: String },
-    voterId: { type: String, unique: true },
+    mobile: { type: String }, // Removed unique constraint for mobile
+    voterId: { type: String, unique: true, sparse: true }, // Made voterId sparse to allow null for admins
+    photo: { type: String, required: true }, // Added the photo field
     hasVoted: {
       type: Boolean,
       default: false,

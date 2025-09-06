@@ -2,17 +2,18 @@ const Voter = require("../models/Voter");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const dotenv = require("dotenv");
-const sgMail = require("@sendgrid/mail");
+const nodemailer = require("nodemailer");
 dotenv.config();
 
-// Initialize SendGrid
-sgMail.setApiKey(process.env.SENDGRID_API_KEY);
+// Set up Nodemailer transporter
+const transporter = nodemailer.createTransport({
+  service: "gmail",
+  auth: {
+    user: process.env.GMAIL_USER,
+    pass: process.env.GMAIL_PASS,
+  },
+});
 
-/**
- * Generates a unique voter ID
- * @param {string} firstName - First name to base ID on
- * @returns {string} Generated voter ID
- */
 const generateUniqueVoterId = async (firstName) => {
   const MAX_ATTEMPTS = 3;
   let attempts = 0;
@@ -40,129 +41,58 @@ const generateUniqueVoterId = async (firstName) => {
   return voterId;
 };
 
-/**
- * Sends welcome email with enhanced styling
- * @param {string} email - Recipient email
- * @param {string} username - Recipient name
- * @param {string} voterId - Generated voter ID
- */
 const sendWelcomeEmail = async (email, username, voterId) => {
   const currentYear = new Date().getFullYear();
   const supportEmail = process.env.SUPPORT_EMAIL || "support@voting-system.com";
   const senderName = process.env.EMAIL_SENDER_NAME || "Voting System Team";
 
-  const msg = {
+  const mailOptions = {
+    from: `"${senderName}" <${process.env.GMAIL_USER}>`,
     to: email,
-    from: {
-      email: process.env.SENDGRID_FROM_EMAIL,
-      name: senderName,
-    },
     subject: `Your Voting Account is Ready - Voter ID: ${voterId}`,
     text: `Hello ${username},\n\nWelcome to our voting platform. Your registration is complete.\n\nYour Voter ID: ${voterId}\n\nPlease keep this ID secure as you'll need it to access the voting system.\n\nFor any questions, contact: ${supportEmail}\n\nBest regards,\n${senderName}`,
     html: `
       <!DOCTYPE html>
       <html>
       <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
         <title>Voter Registration Confirmation</title>
         <style>
-          body {
-            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-            line-height: 1.6;
-            color: #333333;
-            background-color: #f7f7f7;
-            margin: 0;
-            padding: 0;
-          }
-          .email-container {
-            max-width: 600px;
-            margin: 0 auto;
-            background: #ffffff;
-            border-radius: 8px;
-            overflow: hidden;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
-          }
-          .header {
-            background: linear-gradient(135deg, #1e3a8a 0%, #1e40af 100%);
-            color: white;
-            padding: 30px;
-            text-align: center;
-            border-bottom: 4px solid #1d4ed8;
-          }
-          .content {
-            padding: 30px;
-          }
-          .voter-id-box {
-            background-color: #f8f9fa;
-            border-left: 4px solid #3498db;
-            padding: 20px;
-            margin: 20px 0;
-            font-size: 18px;
-            text-align: center;
-            border-radius: 0 4px 4px 0;
-          }
-          .footer {
-            padding: 20px;
-            text-align: center;
-            font-size: 12px;
-            color: #64748b;
-            background-color: #f1f5f9;
-            border-top: 1px solid #e2e8f0;
-          }
-          @media only screen and (max-width: 600px) {
-            .email-container {
-              width: 100%;
-            }
-            .header, .content {
-              padding: 20px;
-            }
-          }
+          body { font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; line-height: 1.6; color: #333; background: #f7f7f7; margin: 0; padding: 0;}
+          .email-container { max-width: 600px; margin: 0 auto; background: #fff; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.05);}
+          .header {background: linear-gradient(135deg, #1e3a8a 0%, #1e40af 100%); color: #fff; padding: 30px; text-align: center; border-bottom: 4px solid #1d4ed8;}
+          .content {padding: 30px;}
+          .voter-id-box {background: #f8f9fa; border-left: 4px solid #3498db; padding: 20px; margin: 20px 0; font-size: 18px; text-align: center; border-radius: 0 4px 4px 0;}
+          .footer {padding: 20px; text-align: center; font-size: 12px; color: #64748b; background: #f1f5f9; border-top: 1px solid #e2e8f0;}
+          @media only screen and (max-width:600px){ .email-container {width: 100%;} .header, .content {padding: 20px;} }
         </style>
       </head>
       <body>
         <div class="email-container">
-          <div class="header">
-            <h1>Welcome to Voting System</h1>
-          </div>
-          
+          <div class="header"><h1>Welcome to Voting System</h1></div>
           <div class="content">
             <p>Hello ${username},</p>
-            
             <p>Thank you for registering with our secure voting platform. Your account has been successfully created.</p>
-            
             <div class="voter-id-box">
-              <strong>Your Voter ID:</strong><br>
+              <strong>Your Voter ID:</strong><br />
               <span style="font-size: 22px; letter-spacing: 1px;">${voterId}</span>
             </div>
-            
             <p>Please keep this ID confidential as it will be required for all voting activities.</p>
-            
             <p>If you have any questions or need assistance, please contact our support team at <a href="mailto:${supportEmail}" style="color: #2563eb; text-decoration: none;">${supportEmail}</a>.</p>
-            
-            <p>Best regards,<br>
-            <strong>${senderName}</strong></p>
+            <p>Best regards,<br /><strong>${senderName}</strong></p>
           </div>
-          
           <div class="footer">
             <p>&copy; ${currentYear} ${senderName}. All rights reserved.</p>
-            <p>
-              <a href="#" style="color: #2563eb; text-decoration: none;">Privacy Policy</a> | 
-              <a href="#" style="color: #2563eb; text-decoration: none;">Terms of Service</a>
-            </p>
+            <p><a href="#" style="color: #2563eb; text-decoration: none;">Privacy Policy</a> | <a href="#" style="color: #2563eb; text-decoration: none;">Terms of Service</a></p>
           </div>
         </div>
       </body>
-      </html>
-    `,
-    mailSettings: {
-      bypassListManagement: { enable: false },
-      sandboxMode: { enable: false },
-    },
+      </html>`,
   };
 
   try {
-    await sgMail.send(msg);
+    await transporter.sendMail(mailOptions);
     console.log(`Welcome email sent to ${email}`);
   } catch (error) {
     console.error("Error sending welcome email:", error);
@@ -187,6 +117,9 @@ const handleRegister = async (req, res) => {
     mobile,
   } = req.body;
 
+  // Multer adds the file info to req.file
+  const photoPath = req.file ? req.file.path : null;
+
   try {
     // Check if email already exists
     const existingUser = await Voter.findOne({ email });
@@ -194,6 +127,13 @@ const handleRegister = async (req, res) => {
       return res.status(400).json({
         success: false,
         message: "Email already registered",
+      });
+    }
+    const existingMobile = await Voter.findOne({ mobile });
+    if (existingMobile) {
+      return res.status(400).json({
+        success: false,
+        message: "Mobile number already registered",
       });
     }
 
@@ -206,16 +146,24 @@ const handleRegister = async (req, res) => {
       !role ||
       !gender ||
       !dob ||
-      !mobile
+      !mobile ||
+      !photoPath // Check if a photo was uploaded
     ) {
+      // It's good practice to unlink the uploaded file if validation fails
+      if (photoPath) {
+        require("fs").unlinkSync(photoPath);
+      }
       return res.status(400).json({
         success: false,
-        message: "Required fields are missing",
+        message: "Required fields are missing, including the photo",
       });
     }
 
     // Validate role
     if (!["voter", "admin"].includes(role)) {
+      if (photoPath) {
+        require("fs").unlinkSync(photoPath);
+      }
       return res.status(400).json({
         success: false,
         message: "Invalid role",
@@ -236,6 +184,7 @@ const handleRegister = async (req, res) => {
       gender,
       dob,
       mobile,
+      photo: photoPath, // Save the path to the photo
     };
 
     // Generate voterId for voters
@@ -244,6 +193,9 @@ const handleRegister = async (req, res) => {
         userData.voterId = await generateUniqueVoterId(firstName);
       } catch (error) {
         console.error("Voter ID generation failed:", error);
+        if (photoPath) {
+          require("fs").unlinkSync(photoPath);
+        }
         return res.status(500).json({
           success: false,
           message: "Failed to generate unique Voter ID. Please try again.",
@@ -274,6 +226,11 @@ const handleRegister = async (req, res) => {
     res.status(201).json(response);
   } catch (error) {
     console.error("Registration error:", error);
+
+    // If an error occurs, delete the uploaded file to prevent clutter
+    if (photoPath) {
+      require("fs").unlinkSync(photoPath);
+    }
 
     if (error.name === "MongoServerError" && error.code === 11000) {
       return res.status(400).json({
@@ -369,6 +326,7 @@ const handleLogin = async (req, res) => {
         mobile: user.mobile,
         role: user.role,
         voterId: user.voterId,
+        photo: user.photo, // Include the photo path in the response
       },
     });
   } catch (error) {
