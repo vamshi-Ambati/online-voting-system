@@ -2,6 +2,8 @@ const express = require("express");
 const router = express.Router();
 const multer = require("multer");
 const {
+  sendEmailVerification,
+  verifyEmail,
   handleRegister,
   handleLogin,
 } = require("../controllers/voterController");
@@ -18,15 +20,24 @@ const storage = multer.diskStorage({
 
 const upload = multer({ storage: storage });
 
-// @route   POST /api/auth/register
+// @route   POST /voter/register
 // @desc    Register a new voter with photo upload
 // @access  Public
-// Use the 'upload.single' middleware to handle the photo file
 router.post("/register", upload.single("photo"), handleRegister);
 
-// @route   POST /api/auth/login
+// @route   POST /voter/login
 // @desc    Login voter
 // @access  Public
 router.post("/login", handleLogin);
+
+// @route   POST /voter/send-email-verification
+// @desc    Send an OTP to the user's email
+// @access  Public
+router.post("/send-email-verification", sendEmailVerification);
+
+// @route   POST /voter/verify-email
+// @desc    Verify the OTP from the user's email
+// @access  Public
+router.post("/verify-email", verifyEmail);
 
 module.exports = router;

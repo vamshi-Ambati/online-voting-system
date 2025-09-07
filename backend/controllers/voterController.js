@@ -1,8 +1,12 @@
 const Voter = require("../models/Voter");
+const OTP = require("../models/Otp");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const dotenv = require("dotenv");
 const nodemailer = require("nodemailer");
+const otpGenerator = require("otp-generator");
+const fs = require("fs");
+
 dotenv.config();
 
 // Set up Nodemailer transporter
@@ -100,6 +104,90 @@ const sendWelcomeEmail = async (email, username, voterId) => {
 };
 
 /**
+ * Sends an OTP to the user's email for verification.
+ * @param {Object} req - Express request object
+ * @param {Object} res - Express response object
+ */
+const sendEmailVerification = async (req, res) => {
+  const { email } = req.body;
+  if (!email) {
+    return res.status(400).json({ message: "Email is required" });
+  }
+
+  try {
+    // Check if the email is already registered
+    const existingUser = await Voter.findOne({ email });
+    if (existingUser) {
+      return res.status(400).json({
+        success: false,
+        message: "Email already registered",
+      });
+    }
+
+    const otp = otpGenerator.generate(6, {
+      digits: true,
+      lowerCaseAlphabets: false,
+      upperCaseAlphabets: false,
+      specialChars: false,
+    });
+
+    await OTP.findOneAndReplace({ email }, { email, otp }, { upsert: true });
+
+    const mailOptions = {
+      from: `"${process.env.EMAIL_SENDER_NAME}" <${process.env.GMAIL_USER}>`,
+      to: email,
+      subject: "Voting Portal: Your Email Verification Code",
+      html: `
+        <div style="font-family: Arial, sans-serif; padding: 20px; color: #333;">
+          <h2 style="color: #007bff;">Email Verification</h2>
+          <p>Hello,</p>
+          <p>Thank you for registering. Please use the following code to verify your email address:</p>
+          <h3 style="background: #f4f4f4; padding: 15px; border-radius: 5px; text-align: center; letter-spacing: 5px;">
+            ${otp}
+          </h3>
+          <p>This code is valid for 5 minutes.</p>
+          <p>If you did not request this, please ignore this email.</p>
+        </div>
+      `,
+    };
+
+    await transporter.sendMail(mailOptions);
+    res.status(200).json({ message: "Verification email sent successfully" });
+  } catch (error) {
+    console.error("Error sending verification email:", error);
+    res.status(500).json({ message: "Failed to send verification email" });
+  }
+};
+
+/**
+ * Verifies the OTP entered by the user.
+ * @param {Object} req - Express request object
+ * @param {Object} res - Express response object
+ */
+const verifyEmail = async (req, res) => {
+  const { email, code } = req.body;
+  if (!email || !code) {
+    return res.status(400).json({ message: "Email and code are required" });
+  }
+
+  try {
+    const otpRecord = await OTP.findOne({ email, otp: code });
+
+    if (!otpRecord) {
+      return res.status(400).json({ message: "Invalid or expired code" });
+    }
+
+    // OTP is valid, now delete it from the database
+    await OTP.deleteOne({ _id: otpRecord._id });
+
+    res.status(200).json({ message: "Email verified successfully" });
+  } catch (error) {
+    console.error("Error verifying email:", error);
+    res.status(500).json({ message: "Verification failed" });
+  }
+};
+
+/**
  * Handles voter registration
  * @param {Object} req - Express request object
  * @param {Object} res - Express response object
@@ -117,27 +205,28 @@ const handleRegister = async (req, res) => {
     mobile,
   } = req.body;
 
-  // Multer adds the file info to req.file
   const photoPath = req.file ? req.file.path : null;
 
   try {
     // Check if email already exists
     const existingUser = await Voter.findOne({ email });
     if (existingUser) {
+      if (photoPath) fs.unlinkSync(photoPath);
       return res.status(400).json({
         success: false,
         message: "Email already registered",
       });
     }
+
     const existingMobile = await Voter.findOne({ mobile });
     if (existingMobile) {
+      if (photoPath) fs.unlinkSync(photoPath);
       return res.status(400).json({
         success: false,
         message: "Mobile number already registered",
       });
     }
 
-    // Validate input
     if (
       !firstName ||
       !lastName ||
@@ -147,33 +236,24 @@ const handleRegister = async (req, res) => {
       !gender ||
       !dob ||
       !mobile ||
-      !photoPath // Check if a photo was uploaded
+      !photoPath
     ) {
-      // It's good practice to unlink the uploaded file if validation fails
-      if (photoPath) {
-        require("fs").unlinkSync(photoPath);
-      }
+      if (photoPath) fs.unlinkSync(photoPath);
       return res.status(400).json({
         success: false,
         message: "Required fields are missing, including the photo",
       });
     }
 
-    // Validate role
     if (!["voter", "admin"].includes(role)) {
-      if (photoPath) {
-        require("fs").unlinkSync(photoPath);
-      }
+      if (photoPath) fs.unlinkSync(photoPath);
       return res.status(400).json({
         success: false,
         message: "Invalid role",
       });
     }
 
-    // Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
-
-    // Prepare user data
     const userData = {
       firstName,
       middleName: middleName || "",
@@ -184,18 +264,15 @@ const handleRegister = async (req, res) => {
       gender,
       dob,
       mobile,
-      photo: photoPath, // Save the path to the photo
+      photo: photoPath,
     };
 
-    // Generate voterId for voters
     if (role === "voter") {
       try {
         userData.voterId = await generateUniqueVoterId(firstName);
       } catch (error) {
         console.error("Voter ID generation failed:", error);
-        if (photoPath) {
-          require("fs").unlinkSync(photoPath);
-        }
+        if (photoPath) fs.unlinkSync(photoPath);
         return res.status(500).json({
           success: false,
           message: "Failed to generate unique Voter ID. Please try again.",
@@ -203,22 +280,18 @@ const handleRegister = async (req, res) => {
       }
     }
 
-    // Create new user
     const newUser = await Voter.create(userData);
 
-    // Send welcome email to voters
     if (role === "voter") {
       await sendWelcomeEmail(email, firstName, userData.voterId);
     }
 
-    // Prepare response
     const response = {
       success: true,
       message: "Registration successful",
       role: newUser.role,
     };
 
-    // Include voterId for voters
     if (role === "voter") {
       response.voterId = newUser.voterId;
     }
@@ -227,10 +300,7 @@ const handleRegister = async (req, res) => {
   } catch (error) {
     console.error("Registration error:", error);
 
-    // If an error occurs, delete the uploaded file to prevent clutter
-    if (photoPath) {
-      require("fs").unlinkSync(photoPath);
-    }
+    if (photoPath) fs.unlinkSync(photoPath);
 
     if (error.name === "MongoServerError" && error.code === 11000) {
       return res.status(400).json({
@@ -255,7 +325,6 @@ const handleLogin = async (req, res) => {
   try {
     const { email, voterId, password, role } = req.body;
 
-    // Validate required fields
     if (!password || !role) {
       return res.status(400).json({
         success: false,
@@ -263,7 +332,6 @@ const handleLogin = async (req, res) => {
       });
     }
 
-    // Find user based on role
     let user;
     if (role === "admin") {
       if (!email) {
@@ -290,7 +358,6 @@ const handleLogin = async (req, res) => {
       });
     }
 
-    // Verify password
     const isPasswordValid = await bcrypt.compare(password, user.password);
     if (!isPasswordValid) {
       return res.status(401).json({
@@ -299,7 +366,6 @@ const handleLogin = async (req, res) => {
       });
     }
 
-    // Generate JWT token using your secret key
     const token = jwt.sign(
       {
         id: user._id,
@@ -326,7 +392,7 @@ const handleLogin = async (req, res) => {
         mobile: user.mobile,
         role: user.role,
         voterId: user.voterId,
-        photo: user.photo, // Include the photo path in the response
+        photo: user.photo,
       },
     });
   } catch (error) {
@@ -339,4 +405,9 @@ const handleLogin = async (req, res) => {
   }
 };
 
-module.exports = { handleRegister, handleLogin };
+module.exports = {
+  sendEmailVerification,
+  verifyEmail,
+  handleRegister,
+  handleLogin,
+};

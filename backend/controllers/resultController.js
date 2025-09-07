@@ -15,6 +15,8 @@ const getElectionResults = async (req, res) => {
 
     // Fetch all candidates
     const candidates = await Candidate.find();
+    // console.log(candidates);
+    
 
     // Calculate total votes
     const totalVotes = voteCounts.reduce((sum, c) => sum + c.votes, 0);
@@ -32,8 +34,8 @@ const getElectionResults = async (req, res) => {
         id: candidate._id,
         candidate: candidate.candidate,
         party: candidate.party,
-        partyImg: candidate.partyImg,
-        color: candidate.color,
+        partyImg: candidate.partySymbolUrl,
+        // color: candidate.color,
         votes,
         percentage: totalVotes > 0 ? Number(((votes / totalVotes) * 100).toFixed(1)) : 0,
         status: candidate.status || "", // Optional: you can set status logic here

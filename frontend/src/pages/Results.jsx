@@ -37,17 +37,17 @@ Chart.register(
 );
 
 const electionInfo = {
-  title: "2024 Mayoral Election",
+  title: "2025 BIHER Election",
   subtitle: "Official Results - Final Count",
-  date: "2024-11-05",
+  date: "2025-11-05",
   status: "CERTIFIED",
   totalVoters: 107000,
   turnout: 78.5,
-  precincts: "All 45 precincts reporting",
-  lastUpdated: "2024-11-06 08:30 AM EST",
-  electionType: "Municipal",
-  region: "Metro City",
-  electionOfficer: "Jane Smith",
+  // precincts: "All 45 precincts reporting",
+  lastUpdated: "2025-11-06 08:30 AM EST",
+  electionType: "Educational",
+  region: "Chennai, India",
+  electionOfficer: "Vamshi Ambati",
   contactEmail: "elections@metro.city.gov",
 };
 

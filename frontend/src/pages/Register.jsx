@@ -13,6 +13,7 @@ import {
   FaCalendarAlt,
   FaMobileAlt,
   FaCamera,
+  FaTimesCircle, // Importing FaTimesCircle for the remove icon
 } from "react-icons/fa";
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
@@ -34,7 +35,7 @@ export default function VotingRegister() {
     mobile: "",
     pin: "",
   });
-  const [photo, setPhoto] = useState(null); // State for the photo file
+  const [photo, setPhoto] = useState(null);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [showPin, setShowPin] = useState(false);
@@ -43,6 +44,13 @@ export default function VotingRegister() {
   const [registerSuccess, setRegisterSuccess] = useState(false);
   const [generatedVoterId, setGeneratedVoterId] = useState("");
 
+  // Email verification states
+  const [emailVerificationSent, setEmailVerificationSent] = useState(false);
+  const [verificationCode, setVerificationCode] = useState("");
+  const [emailVerified, setEmailVerified] = useState(false);
+  const [isSendingVerification, setIsSendingVerification] = useState(false);
+  const [isVerifyingEmail, setIsVerifyingEmail] = useState(false);
+
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target;
     setFormData((prev) => ({
@@ -50,16 +58,80 @@ export default function VotingRegister() {
       [name]: type === "checkbox" ? checked : value,
     }));
 
+    // Reset email verification if email changes
+    if (name === "email") {
+      setEmailVerified(false);
+      setEmailVerificationSent(false);
+      setVerificationCode("");
+      setErrors((prev) => ({ ...prev, otp: "" }));
+    }
+
     if (errors[name]) {
       setErrors((prev) => ({ ...prev, [name]: "" }));
     }
   };
 
-  // Handle file input change
   const handleFileChange = (e) => {
-    setPhoto(e.target.files[0]);
-    if (errors.photo) {
+    const file = e.target.files[0];
+    if (file) {
+      setPhoto(file);
       setErrors((prev) => ({ ...prev, photo: "" }));
+    }
+  };
+
+  const handleRemovePhoto = () => {
+    setPhoto(null);
+  };
+
+  // Send verification code email
+  const handleSendVerification = async () => {
+    if (!formData.email) {
+      toast.error("Enter a valid email to send verification");
+      return;
+    }
+    try {
+      setIsSendingVerification(true);
+      const res = await fetch(`${apiUrl}/voter/send-email-verification`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: formData.email }),
+      });
+      const data = await res.json();
+      if (!res.ok)
+        throw new Error(data.message || "Failed to send verification email");
+      toast.success("Verification email sent! Check your inbox.");
+      setEmailVerificationSent(true);
+    } catch (err) {
+      toast.error(err.message);
+    } finally {
+      setIsSendingVerification(false);
+    }
+  };
+
+  // Verify entered code
+  const handleVerifyEmail = async () => {
+    if (!verificationCode.trim()) {
+      toast.error("Enter verification code");
+      return;
+    }
+    try {
+      setIsVerifyingEmail(true);
+      const res = await fetch(`${apiUrl}/voter/verify-email`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: formData.email, code: verificationCode }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || "Verification failed");
+      toast.success("Email verified!");
+      setEmailVerified(true);
+      setErrors((prev) => ({ ...prev, otp: "" }));
+    } catch (err) {
+      toast.error(err.message);
+      setEmailVerified(false);
+      setErrors((prev) => ({ ...prev, otp: "Verification failed" }));
+    } finally {
+      setIsVerifyingEmail(false);
     }
   };
 
@@ -82,6 +154,10 @@ export default function VotingRegister() {
       newErrors.email = "Email is required";
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
       newErrors.email = "Please enter a valid email";
+    }
+
+    if (!emailVerified) {
+      newErrors.otp = "Please verify your email address.";
     }
 
     if (!formData.password) {
@@ -135,27 +211,20 @@ export default function VotingRegister() {
     }
     setIsLoading(true);
 
-    // Create a FormData object to send the form data and the file
     const data = new FormData();
     for (const key in formData) {
-      // Exclude confirmPassword from the data sent to the backend
       if (key !== "confirmPassword") {
         data.append(key, formData[key]);
       }
     }
-    // Append the photo file
     data.append("photo", photo);
 
     try {
-      // Fetch request using the FormData object
       const response = await fetch(`${apiUrl}/voter/register`, {
         method: "POST",
-        // No 'Content-Type' header needed; the browser sets it automatically for FormData
         body: data,
       });
-
       const responseData = await response.json();
-
       if (!response.ok) {
         throw new Error(responseData.message || "Registration failed");
       }
@@ -224,6 +293,51 @@ export default function VotingRegister() {
               </div>
             ) : (
               <form onSubmit={handleSubmit}>
+                {/* --- New Photo Upload Section --- */}
+                <label className="form-label photo-upload-label-text">
+                  Profile Photo*
+                </label>
+                <div className="photo-upload-container">
+                  <label htmlFor="photo-upload" className="photo-upload-label">
+                    {photo ? (
+                      <div className="photo-preview-container">
+                        <img
+                          src={URL.createObjectURL(photo)}
+                          alt="Uploaded Profile"
+                          className="photo-preview-image"
+                        />
+                        <button
+                          type="button"
+                          className="photo-remove-button"
+                          onClick={handleRemovePhoto}
+                        >
+                          <FaTimesCircle />
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="photo-upload-placeholder">
+                        <FaCamera className="upload-icon" />
+                        <span className="upload-text">Upload Photo</span>
+                      </div>
+                    )}
+                  </label>
+                  <input
+                    type="file"
+                    id="photo-upload"
+                    name="photo"
+                    onChange={handleFileChange}
+                    className="photo-input"
+                    accept="image/*"
+                  />
+                </div>
+                {errors.photo && (
+                  <div className="error-message photo-error">
+                    {errors.photo}
+                  </div>
+                )}
+                {/* --- End of New Photo Upload Section --- */}
+
+                {/* First Name, Middle Name, Last Name */}
                 <div className="form-row">
                   <div className="form-field third-width">
                     <label htmlFor="firstName" className="form-label">
@@ -290,6 +404,7 @@ export default function VotingRegister() {
                   </div>
                 </div>
 
+                {/* Gender, DOB, Mobile */}
                 <div className="form-row">
                   <div className="form-field third-width">
                     <label htmlFor="gender" className="form-label">
@@ -361,30 +476,7 @@ export default function VotingRegister() {
                   </div>
                 </div>
 
-                <div className="form-row">
-                  <div className="form-field full-width">
-                    <label htmlFor="photo" className="form-label">
-                      Upload Photo*
-                    </label>
-                    <div className="input-with-icon">
-                      <FaCamera className="input-icon" />
-                      <input
-                        type="file"
-                        id="photo"
-                        name="photo"
-                        onChange={handleFileChange}
-                        className={`form-input-file ${
-                          errors.photo ? "error" : ""
-                        }`}
-                        accept="image/*"
-                      />
-                    </div>
-                    {errors.photo && (
-                      <div className="error-message">{errors.photo}</div>
-                    )}
-                  </div>
-                </div>
-
+                {/* Email, Password, Confirm Password */}
                 <div className="form-row">
                   <div className="form-field third-width">
                     <label htmlFor="email" className="form-label">
@@ -400,6 +492,7 @@ export default function VotingRegister() {
                         onChange={handleInputChange}
                         className={`form-input ${errors.email ? "error" : ""}`}
                         placeholder="Your email address"
+                        disabled={emailVerified}
                       />
                     </div>
                     {errors.email && (
@@ -467,7 +560,51 @@ export default function VotingRegister() {
                     )}
                   </div>
                 </div>
+                {/* Email Verification side-by-side with other fields */}
+                <div className="form-row">
+                  <div className="form-field full-width email-verification-group">
+                    <label className="form-label">Email Verification*</label>
+                    <div className="email-verification-controls">
+                      <input
+                        type="text"
+                        placeholder="Verification code"
+                        value={verificationCode}
+                        onChange={(e) => setVerificationCode(e.target.value)}
+                        disabled={emailVerified}
+                        className={`form-input ${errors.otp ? "error" : ""}`}
+                      />
+                      <button
+                        type="button"
+                        onClick={handleSendVerification}
+                        disabled={isSendingVerification || emailVerified}
+                        className="small-button"
+                      >
+                        {emailVerificationSent ? "Resend" : "Send"}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={handleVerifyEmail}
+                        disabled={isVerifyingEmail || emailVerified}
+                        className="small-button verify-button"
+                      >
+                        Verify
+                      </button>
+                    </div>
+                    {errors.otp && (
+                      <div className="error-message">{errors.otp}</div>
+                    )}
+                    {emailVerified && (
+                      <div
+                        className="success-message"
+                        style={{ marginTop: "5px" }}
+                      >
+                        Email verified successfully!
+                      </div>
+                    )}
+                  </div>
+                </div>
 
+                {/* Account Type radio buttons */}
                 <div className="form-field">
                   <label className="form-label">Account Type*</label>
                   <div className="register-role-selection">
@@ -512,7 +649,7 @@ export default function VotingRegister() {
                   </div>
                 </div>
 
-                {/* Show admin PIN input field only when role is admin */}
+                {/* Admin PIN input field - visible only if admin */}
                 {formData.role === "admin" && (
                   <div className="form-row">
                     <div className="form-field third-width">

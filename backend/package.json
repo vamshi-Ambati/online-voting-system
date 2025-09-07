@@ -12,12 +12,16 @@
   "description": "",
   "dependencies": {
     "@sendgrid/mail": "^8.1.5",
+    "@tensorflow/tfjs": "^4.22.0",
+    "@tensorflow/tfjs-node": "^4.22.0",
     "bcrypt": "^6.0.0",
     "bcryptjs": "^3.0.2",
     "cors": "^2.8.5",
     "dotenv": "^16.6.1",
     "express": "^5.1.0",
+    "face-api.js": "^0.22.2",
     "jsonwebtoken": "^9.0.2",
+    "module": "^1.2.5",
     "mongoose": "^8.14.1",
     "multer": "^2.0.2",
     "nodemailer": "^7.0.6",
@@ -25,6 +29,7 @@
     "otp-generator": "^4.0.1",
     "path": "^0.12.7",
     "pdfkit": "^0.17.2",
+    "react-webcam": "^7.2.0",
     "sib-api-v3-sdk": "^8.5.0",
     "twilio": "^5.8.0"
   }
