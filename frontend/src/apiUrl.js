@@ -1,3 +1,2 @@
-// const apiUrl = "http://localhost:3000";
-const apiUrl = "https://online-voting-system-r5sy.vercel.app/";
+const apiUrl = "http://localhost:3000";
 export default apiUrl;
