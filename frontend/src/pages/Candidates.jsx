@@ -1,6 +1,7 @@
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useState, useCallback, useRef } from "react";
 import { toast } from "react-toastify";
 import { FiPlus, FiUsers, FiList, FiUpload, FiX } from "react-icons/fi";
+import Webcam from "react-webcam";
 import "../styles/candidates.css";
 import apiUrl from "../apiUrl";
 
@@ -26,6 +27,14 @@ const Candidates = () => {
   const [loadingVote, setLoadingVote] = useState(false);
   const [previewImage, setPreviewImage] = useState(null);
   const [previewSymbol, setPreviewSymbol] = useState(null);
+
+  // --- New state for Face Verification ---
+  const [showFaceVerification, setShowFaceVerification] = useState(false);
+  const [capturedImage, setCapturedImage] = useState(null);
+  const [verificationLoading, setVerificationLoading] = useState(false);
+  const [verificationMessage, setVerificationMessage] = useState("");
+  const [candidateToVote, setCandidateToVote] = useState(null); // To store candidate info for voting after verification
+  const webcamRef = useRef(null);
 
   const userData = JSON.parse(localStorage.getItem("userData")) || {
     role: "voter",
@@ -128,6 +137,7 @@ const Candidates = () => {
         setPreviewImage(null);
         setPreviewSymbol(null);
         getCandidates();
+        setShowAddForm(false);
       } else {
         toast.error(data.message || "Failed to add candidate.");
       }
@@ -136,17 +146,66 @@ const Candidates = () => {
     }
   };
 
+  // --- New function to handle face capture ---
+  const handleFaceCapture = () => {
+    const imageSrc = webcamRef.current.getScreenshot();
+    if (imageSrc) {
+      setCapturedImage(imageSrc);
+      setVerificationMessage("");
+    } else {
+      toast.error("Failed to capture image. Please try again.");
+    }
+  };
+
+  // --- New function to handle face verification API call ---
+  const verifyAndVote = async () => {
+    if (!capturedImage) {
+      setVerificationMessage("Please capture your face first.");
+      return;
+    }
+
+    if (!userData || !userData._id) {
+      toast.error("User data not found. Please log in again.");
+      return;
+    }
+
+    setVerificationLoading(true);
+    setVerificationMessage("Verifying face...");
+
+    try {
+      const response = await fetch(`${apiUrl}/api/verify-face`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          voterId: userData._id,
+          image: capturedImage,
+        }),
+      });
+
+      const data = await response.json();
+      if (response.ok && data.match) {
+        setVerificationMessage("Face verified successfully! Casting vote...");
+        await handleVote(candidateToVote._id, candidateToVote.party);
+        setShowFaceVerification(false);
+      } else {
+        setVerificationMessage(
+          data.message || "Face verification failed. Please try again."
+        );
+        toast.error(data.message || "Face verification failed.");
+      }
+    } catch (err) {
+      console.error("Verification error:", err);
+      setVerificationMessage("An error occurred during verification.");
+      toast.error("An error occurred during verification.");
+    } finally {
+      setVerificationLoading(false);
+    }
+  };
+
   // Vote button handler
-  const handleVoteBtn = async (candidateId, votedFor) => {
+  const handleVoteBtn = (candidateId) => {
     const candidate = candidates.find((c) => c._id === candidateId);
     if (!candidate) return;
-
-    if (
-      !window.confirm(
-        `Are you sure you want to vote for "${candidate.name}" (${candidate.party})?`
-      )
-    )
-      return;
 
     if (!userData || !userData._id) {
       toast.error("You must be logged in as a voter to vote.");
@@ -161,6 +220,15 @@ const Candidates = () => {
       return;
     }
 
+    // Set candidate for later use and show verification UI
+    setCandidateToVote(candidate);
+    setShowFaceVerification(true);
+    setCapturedImage(null);
+    setVerificationMessage("");
+  };
+
+  // New function to handle the actual vote submission
+  const handleVote = async (candidateId, votedFor) => {
     setLoadingVote(true);
     try {
       const response = await fetch(`${apiUrl}/api/votes/vote`, {
@@ -168,7 +236,7 @@ const Candidates = () => {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           candidateId,
-          voterId: userData._id, // use _id here
+          voterId: userData._id,
           voter_Name:
             userData.firstName +
             " " +
@@ -449,6 +517,60 @@ const Candidates = () => {
         </div>
       )}
 
+      {/* Face Verification Modal (for voters) */}
+      {showFaceVerification && (
+        <div className="verification-modal-overlay">
+          <div className="verification-modal-content">
+            <div className="modal-header">
+              <h3>Face Verification</h3>
+              <button
+                onClick={() => setShowFaceVerification(false)}
+                className="close-btn"
+              >
+                <FiX />
+              </button>
+            </div>
+            <p>
+              Please position your face clearly in the frame and click
+              'Capture'.
+            </p>
+            <div className="webcam-container">
+              <Webcam
+                audio={false}
+                ref={webcamRef}
+                screenshotFormat="image/jpeg"
+                width={300}
+                height={225}
+                videoConstraints={{ facingMode: "user" }}
+              />
+            </div>
+            <button
+              onClick={handleFaceCapture}
+              className="capture-btn"
+              disabled={verificationLoading}
+            >
+              {capturedImage ? "Recapture" : "Capture Photo"}
+            </button>
+            {capturedImage && (
+              <div className="captured-image-preview">
+                <h4>Captured Image</h4>
+                <img src={capturedImage} alt="Captured" />
+              </div>
+            )}
+            <div className="verification-status">
+              <p>{verificationMessage}</p>
+            </div>
+            <button
+              onClick={verifyAndVote}
+              className="verify-vote-btn"
+              disabled={!capturedImage || verificationLoading}
+            >
+              {verificationLoading ? "Processing..." : "Verify & Vote"}
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Candidates display */}
       {(showCandidates || userData.role === "voter") && (
         <div className="candidates-list">
@@ -493,9 +615,7 @@ const Candidates = () => {
                           className={`vote-btn ${
                             votedCandidateId === candidate._id ? "voted" : ""
                           }`}
-                          onClick={() =>
-                            handleVoteBtn(candidate._id, candidate.party)
-                          }
+                          onClick={() => handleVoteBtn(candidate._id)}
                           disabled={!!votedCandidateId || loadingVote}
                         >
                           {votedCandidateId === candidate._id

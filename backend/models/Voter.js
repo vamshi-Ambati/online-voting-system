@@ -18,14 +18,18 @@ const voterSchema = new mongoose.Schema(
       enum: ["male", "female", "other", "prefer-not-to-say"],
     },
     dob: { type: Date },
-    mobile: { type: String }, // Removed unique constraint for mobile
-    voterId: { type: String, unique: true, sparse: true }, // Made voterId sparse to allow null for admins
-    photo: { type: String, required: true }, // Added the photo field
+    mobile: { type: String },
+    voterId: { type: String, unique: true, sparse: true },
+    photo: { type: String, required: true },
     hasVoted: {
       type: Boolean,
       default: false,
     },
-    // isVerified: { type: Boolean, default: false },
+    // The new field to store the face descriptor
+    faceDescriptor: {
+      type: [Number], // Stored as an array of numbers
+      required: true,
+    },
   },
   { timestamps: true }
 );

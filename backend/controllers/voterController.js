@@ -6,10 +6,16 @@ const dotenv = require("dotenv");
 const nodemailer = require("nodemailer");
 const otpGenerator = require("otp-generator");
 const fs = require("fs");
+const path = require("path");
+
+// These imports are required for the face descriptor logic in handleRegister
+const faceapi = require("@vladmandic/face-api");
+const canvas = require("canvas");
+const { Canvas, Image, ImageData } = canvas;
+faceapi.env.monkeyPatch({ Canvas, Image, ImageData });
 
 dotenv.config();
 
-// Set up Nodemailer transporter
 const transporter = nodemailer.createTransport({
   service: "gmail",
   auth: {
@@ -17,6 +23,21 @@ const transporter = nodemailer.createTransport({
     pass: process.env.GMAIL_PASS,
   },
 });
+
+// This function loads the models once at startup and is essential for faceapi to work
+let modelsLoaded = false;
+async function ensureModels() {
+  if (!modelsLoaded) {
+    console.log("Loading face-api.js models...");
+    const MODEL_PATH = path.resolve(__dirname, "../face-api-models");
+    await faceapi.nets.ssdMobilenetv1.loadFromDisk(MODEL_PATH);
+    await faceapi.nets.faceRecognitionNet.loadFromDisk(MODEL_PATH);
+    await faceapi.nets.faceLandmark68Net.loadFromDisk(MODEL_PATH);
+    modelsLoaded = true;
+    console.log("Face-api.js models loaded successfully.");
+  }
+}
+ensureModels();
 
 const generateUniqueVoterId = async (firstName) => {
   const MAX_ATTEMPTS = 3;
@@ -103,11 +124,6 @@ const sendWelcomeEmail = async (email, username, voterId) => {
   }
 };
 
-/**
- * Sends an OTP to the user's email for verification.
- * @param {Object} req - Express request object
- * @param {Object} res - Express response object
- */
 const sendEmailVerification = async (req, res) => {
   const { email } = req.body;
   if (!email) {
@@ -115,7 +131,6 @@ const sendEmailVerification = async (req, res) => {
   }
 
   try {
-    // Check if the email is already registered
     const existingUser = await Voter.findOne({ email });
     if (existingUser) {
       return res.status(400).json({
@@ -159,11 +174,6 @@ const sendEmailVerification = async (req, res) => {
   }
 };
 
-/**
- * Verifies the OTP entered by the user.
- * @param {Object} req - Express request object
- * @param {Object} res - Express response object
- */
 const verifyEmail = async (req, res) => {
   const { email, code } = req.body;
   if (!email || !code) {
@@ -177,7 +187,6 @@ const verifyEmail = async (req, res) => {
       return res.status(400).json({ message: "Invalid or expired code" });
     }
 
-    // OTP is valid, now delete it from the database
     await OTP.deleteOne({ _id: otpRecord._id });
 
     res.status(200).json({ message: "Email verified successfully" });
@@ -187,11 +196,6 @@ const verifyEmail = async (req, res) => {
   }
 };
 
-/**
- * Handles voter registration
- * @param {Object} req - Express request object
- * @param {Object} res - Express response object
- */
 const handleRegister = async (req, res) => {
   const {
     firstName,
@@ -208,25 +212,6 @@ const handleRegister = async (req, res) => {
   const photoPath = req.file ? req.file.path : null;
 
   try {
-    // Check if email already exists
-    const existingUser = await Voter.findOne({ email });
-    if (existingUser) {
-      if (photoPath) fs.unlinkSync(photoPath);
-      return res.status(400).json({
-        success: false,
-        message: "Email already registered",
-      });
-    }
-
-    const existingMobile = await Voter.findOne({ mobile });
-    if (existingMobile) {
-      if (photoPath) fs.unlinkSync(photoPath);
-      return res.status(400).json({
-        success: false,
-        message: "Mobile number already registered",
-      });
-    }
-
     if (
       !firstName ||
       !lastName ||
@@ -245,6 +230,24 @@ const handleRegister = async (req, res) => {
       });
     }
 
+    const existingUser = await Voter.findOne({ email });
+    if (existingUser) {
+      if (photoPath) fs.unlinkSync(photoPath);
+      return res.status(400).json({
+        success: false,
+        message: "Email already registered",
+      });
+    }
+
+    const existingMobile = await Voter.findOne({ mobile });
+    if (existingMobile) {
+      if (photoPath) fs.unlinkSync(photoPath);
+      return res.status(400).json({
+        success: false,
+        message: "Mobile number already registered",
+      });
+    }
+
     if (!["voter", "admin"].includes(role)) {
       if (photoPath) fs.unlinkSync(photoPath);
       return res.status(400).json({
@@ -252,6 +255,24 @@ const handleRegister = async (req, res) => {
         message: "Invalid role",
       });
     }
+
+    const photoBuffer = fs.readFileSync(photoPath);
+    const img = await canvas.loadImage(photoBuffer);
+
+    const detection = await faceapi
+      .detectSingleFace(img)
+      .withFaceLandmarks()
+      .withFaceDescriptor();
+
+    if (!detection) {
+      fs.unlinkSync(photoPath);
+      return res.status(400).json({
+        success: false,
+        message: "No face detected in the photo. Please use a clear photo.",
+      });
+    }
+
+    const faceDescriptor = Array.from(detection.descriptor);
 
     const hashedPassword = await bcrypt.hash(password, 10);
     const userData = {
@@ -265,6 +286,7 @@ const handleRegister = async (req, res) => {
       dob,
       mobile,
       photo: photoPath,
+      faceDescriptor,
     };
 
     if (role === "voter") {
@@ -301,14 +323,12 @@ const handleRegister = async (req, res) => {
     console.error("Registration error:", error);
 
     if (photoPath) fs.unlinkSync(photoPath);
-
     if (error.name === "MongoServerError" && error.code === 11000) {
       return res.status(400).json({
         success: false,
         message: "Registration failed - duplicate data",
       });
     }
-
     res.status(500).json({
       success: false,
       message: "Registration failed. Please try again.",
@@ -316,11 +336,6 @@ const handleRegister = async (req, res) => {
   }
 };
 
-/**
- * Handles user login
- * @param {Object} req - Express request object
- * @param {Object} res - Express response object
- */
 const handleLogin = async (req, res) => {
   try {
     const { email, voterId, password, role } = req.body;
