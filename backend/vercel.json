@@ -1,7 +1,15 @@
 {
-  "functions": {
-    "backend/index.js": {
-      "excludeFiles": "{.next,*.cache,node_modules,public,app}/**"
+  "builds": [
+    {
+      "src": "backend/index.js",
+      "use": "@vercel/node"
     }
-  }
+  ],
+  "routes": [
+    {
+      "src": "/(.*)",
+      "dest": "backend/index.js"
+    }
+  ]
 }
+
