@@ -1,7 +1,0 @@
-{
-  "functions": {
-    "api/**": {
-      "excludeFiles": "{tests,docs,.cache,node_modules/**/__tests__}/**"
-    }
-  }
-}
