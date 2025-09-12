@@ -1,6 +1,6 @@
 {
   "functions": {
-    "api/**": {
+    "index.js": {
       "excludeFiles": "{.next,*.cache,node_modules,public,app}/**"
     }
   }
