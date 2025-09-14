@@ -14,6 +14,8 @@ import {
   FaMobileAlt,
   FaCamera,
   FaTimesCircle,
+  FaIdCard,
+  FaAsterisk,
 } from "react-icons/fa";
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
@@ -22,16 +24,18 @@ import apiUrl from "../apiUrl";
 
 export default function VotingRegister() {
   const navigate = useNavigate();
+
   const [formData, setFormData] = useState({
     firstName: "",
-    middleName: "",
     lastName: "",
+    voterId: "",
     email: "",
     password: "",
     confirmPassword: "",
     role: "voter",
     gender: "",
     dob: "",
+    aadhaar: "",
     mobile: "",
     pin: "",
   });
@@ -44,6 +48,8 @@ export default function VotingRegister() {
   const [isLoading, setIsLoading] = useState(false);
   const [registerSuccess, setRegisterSuccess] = useState(false);
   const [generatedVoterId, setGeneratedVoterId] = useState("");
+
+  // Email verification state
   const [emailVerificationSent, setEmailVerificationSent] = useState(false);
   const [verificationCode, setVerificationCode] = useState("");
   const [emailVerified, setEmailVerified] = useState(false);
@@ -51,7 +57,7 @@ export default function VotingRegister() {
   const [isVerifyingEmail, setIsVerifyingEmail] = useState(false);
   const [canVerifyEmail, setCanVerifyEmail] = useState(false);
 
-  // New state for mobile OTP verification
+  // Mobile OTP verification state
   const [mobileVerificationSent, setMobileVerificationSent] = useState(false);
   const [mobileVerificationCode, setMobileVerificationCode] = useState("");
   const [mobileVerified, setMobileVerified] = useState(false);
@@ -61,6 +67,7 @@ export default function VotingRegister() {
 
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target;
+
     setFormData((prev) => ({
       ...prev,
       [name]: type === "checkbox" ? checked : value,
@@ -70,16 +77,13 @@ export default function VotingRegister() {
       setEmailVerified(false);
       setEmailVerificationSent(false);
       setVerificationCode("");
-      setErrors((prev) => ({ ...prev, otp: "" }));
       setCanVerifyEmail(false);
     }
 
-    // Reset mobile verification state when mobile number changes
     if (name === "mobile") {
       setMobileVerified(false);
       setMobileVerificationSent(false);
       setMobileVerificationCode("");
-      setErrors((prev) => ({ ...prev, mobileOtp: "" }));
       setCanVerifyMobile(false);
     }
 
@@ -102,6 +106,7 @@ export default function VotingRegister() {
     setUploadedPhoto(null);
   };
 
+  // Send email verification code
   const handleSendVerification = async () => {
     if (!formData.email) {
       toast.error("Enter a valid email to send verification");
@@ -127,6 +132,7 @@ export default function VotingRegister() {
     }
   };
 
+  // Verify email
   const handleVerifyEmail = async () => {
     if (!verificationCode.trim()) {
       toast.error("Enter verification code");
@@ -143,18 +149,16 @@ export default function VotingRegister() {
       if (!res.ok) throw new Error(data.message || "Verification failed");
       toast.success("Email verified!");
       setEmailVerified(true);
-      setErrors((prev) => ({ ...prev, otp: "" }));
       setCanVerifyEmail(false);
     } catch (err) {
       toast.error(err.message);
       setEmailVerified(false);
-      setErrors((prev) => ({ ...prev, otp: "Verification failed" }));
     } finally {
       setIsVerifyingEmail(false);
     }
   };
 
-  // New handler for sending mobile OTP
+  // Send mobile OTP
   const handleSendMobileOTP = async () => {
     if (!formData.mobile || !/^\d{10}$/.test(formData.mobile)) {
       toast.error("Enter a valid 10-digit mobile number");
@@ -179,7 +183,7 @@ export default function VotingRegister() {
     }
   };
 
-  // New handler for verifying mobile OTP
+  // Verify mobile OTP
   const handleVerifyMobileOTP = async () => {
     if (!mobileVerificationCode.trim()) {
       toast.error("Enter the OTP");
@@ -199,17 +203,16 @@ export default function VotingRegister() {
       if (!res.ok) throw new Error(data.message || "OTP verification failed");
       toast.success("Mobile number verified!");
       setMobileVerified(true);
-      setErrors((prev) => ({ ...prev, mobileOtp: "" }));
       setCanVerifyMobile(false);
     } catch (err) {
       toast.error(err.message);
       setMobileVerified(false);
-      setErrors((prev) => ({ ...prev, mobileOtp: "OTP verification failed" }));
     } finally {
       setIsVerifyingMobileOTP(false);
     }
   };
 
+  // Validate form fields
   const validateForm = () => {
     const newErrors = {};
     if (!uploadedPhoto) {
@@ -224,6 +227,9 @@ export default function VotingRegister() {
       newErrors.lastName = "Last name is required";
     } else if (formData.lastName.length < 2) {
       newErrors.lastName = "Last name must be at least 2 characters";
+    }
+    if (!formData.voterId.trim()) {
+      newErrors.voterId = "Voter ID is required";
     }
     if (!formData.email.trim()) {
       newErrors.email = "Email is required";
@@ -256,6 +262,11 @@ export default function VotingRegister() {
     }
     if (!formData.dob) {
       newErrors.dob = "Date of birth is required";
+    }
+    if (!formData.aadhaar.trim()) {
+      newErrors.aadhaar = "Aadhaar number is required";
+    } else if (!/^\d{12}$/.test(formData.aadhaar)) {
+      newErrors.aadhaar = "Please enter a valid 12-digit Aadhaar number";
     }
     if (formData.role === "admin") {
       if (!formData.pin) {
@@ -304,16 +315,27 @@ export default function VotingRegister() {
       setTimeout(() => navigate("/login"), 5000);
     } catch (error) {
       console.error("Registration error:", error);
-      if (error.message.includes("Email already registered")) {
+      const message = error.message || "";
+
+      if (message.includes("Email already registered")) {
         toast.error("This email is already in use");
         setErrors({ email: "Email already registered" });
-      } else if (error.message.includes("Mobile number already registered")) {
+      } else if (message.includes("Mobile already registered")) {
         toast.error("This mobile number is already in use");
         setErrors({ mobile: "Mobile number already registered" });
-      } else if (error.message.includes("unique Voter ID")) {
-        toast.error("Please try registering again");
+      } else if (message.includes("Voter ID already registered")) {
+        toast.error("This voter ID is already registered");
+        setErrors({ voterId: "Voter ID must be unique" });
+      } else if (message.includes("unique Aadhaar number")) {
+        toast.error("This Aadhaar number is already registered");
+        setErrors({ aadhaar: "Aadhaar must be unique" });
+      } else if (
+        message.includes("All required fields including photo must be provided")
+      ) {
+        toast.error("Please upload a passport-sized photo");
+        setErrors({ photo: "Photo validation failed" });
       } else {
-        toast.error(error.message || "Registration failed");
+        toast.error(message || "Registration failed");
       }
     } finally {
       setIsLoading(false);
@@ -358,6 +380,7 @@ export default function VotingRegister() {
               </div>
             ) : (
               <form onSubmit={handleSubmit}>
+                {/* Photo Upload */}
                 <label className="form-label photo-upload-label-text">
                   Profile Photo* (For Face Verification)
                 </label>
@@ -376,7 +399,7 @@ export default function VotingRegister() {
                           className="photo-upload-input"
                           accept="image/*"
                           onChange={handlePhotoUpload}
-                          required
+                          // required
                         />
                       </label>
                     </>
@@ -392,6 +415,7 @@ export default function VotingRegister() {
                         type="button"
                         className="photo-remove-button"
                         onClick={handleRemovePhoto}
+                        aria-label="Remove uploaded photo"
                       >
                         <FaTimesCircle />
                       </button>
@@ -403,6 +427,8 @@ export default function VotingRegister() {
                     {errors.photo}
                   </div>
                 )}
+
+                {/* Name and Voter ID row */}
                 <div className="form-row">
                   <div className="form-field third-width">
                     <label htmlFor="firstName" className="form-label">
@@ -427,23 +453,7 @@ export default function VotingRegister() {
                       <div className="error-message">{errors.firstName}</div>
                     )}
                   </div>
-                  <div className="form-field third-width">
-                    <label htmlFor="middleName" className="form-label">
-                      Middle Name
-                    </label>
-                    <div className="input-with-icon">
-                      <FaUser className="input-icon" />
-                      <input
-                        type="text"
-                        id="middleName"
-                        name="middleName"
-                        value={formData.middleName}
-                        onChange={handleInputChange}
-                        className="form-input"
-                        placeholder="Middle name (optional)"
-                      />
-                    </div>
-                  </div>
+
                   <div className="form-field third-width">
                     <label htmlFor="lastName" className="form-label">
                       Last Name*
@@ -467,7 +477,33 @@ export default function VotingRegister() {
                       <div className="error-message">{errors.lastName}</div>
                     )}
                   </div>
+
+                  <div className="form-field third-width">
+                    <label htmlFor="voterId" className="form-label">
+                      Voter ID*
+                    </label>
+                    <div className="input-with-icon">
+                      <FaIdCard className="input-icon" />
+                      <input
+                        type="text"
+                        id="voterId"
+                        name="voterId"
+                        value={formData.voterId}
+                        onChange={handleInputChange}
+                        className={`form-input ${
+                          errors.voterId ? "error" : ""
+                        }`}
+                        placeholder="Voter ID"
+                        required
+                      />
+                    </div>
+                    {errors.voterId && (
+                      <div className="error-message">{errors.voterId}</div>
+                    )}
+                  </div>
                 </div>
+
+                {/* Gender, DOB, Aadhaar row */}
                 <div className="form-row">
                   <div className="form-field third-width">
                     <label htmlFor="gender" className="form-label">
@@ -496,6 +532,7 @@ export default function VotingRegister() {
                       <div className="error-message">{errors.gender}</div>
                     )}
                   </div>
+
                   <div className="form-field third-width">
                     <label htmlFor="dob" className="form-label">
                       Date of Birth*
@@ -516,6 +553,35 @@ export default function VotingRegister() {
                       <div className="error-message">{errors.dob}</div>
                     )}
                   </div>
+
+                  <div className="form-field third-width">
+                    <label htmlFor="aadhaar" className="form-label">
+                      Aadhaar Number*
+                    </label>
+                    <div className="input-with-icon">
+                      <FaAsterisk className="input-icon" />
+                      <input
+                        type="text"
+                        id="aadhaar"
+                        name="aadhaar"
+                        value={formData.aadhaar}
+                        onChange={handleInputChange}
+                        className={`form-input ${
+                          errors.aadhaar ? "error" : ""
+                        }`}
+                        placeholder="12-digit Aadhaar number"
+                        maxLength="12"
+                        required
+                      />
+                    </div>
+                    {errors.aadhaar && (
+                      <div className="error-message">{errors.aadhaar}</div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Mobile number and OTP verification row */}
+                <div className="form-row">
                   <div className="form-field third-width">
                     <label htmlFor="mobile" className="form-label">
                       Mobile Number*
@@ -538,65 +604,67 @@ export default function VotingRegister() {
                       <div className="error-message">{errors.mobile}</div>
                     )}
                   </div>
-                </div>
 
-                {/* New Mobile OTP Verification Section */}
-                <div className="form-row">
-                  <div className="form-field full-width email-verification-group">
-                    <label className="form-label">Mobile Verification*</label>
-                    <div className="email-verification-controls">
-                      <input
-                        type="text"
-                        placeholder="Enter OTP"
-                        value={mobileVerificationCode}
-                        onChange={(e) =>
-                          setMobileVerificationCode(e.target.value)
-                        }
-                        disabled={mobileVerified || !canVerifyMobile}
-                        className={`form-input ${
-                          errors.mobileOtp ? "error" : ""
-                        }`}
-                        required
-                      />
-                      <button
-                        type="button"
-                        onClick={handleSendMobileOTP}
-                        disabled={isSendingMobileOTP || mobileVerified}
-                        className="small-button"
-                      >
-                        {isSendingMobileOTP
-                          ? "Sending..."
-                          : mobileVerificationSent
-                          ? "Resend"
-                          : "Send OTP"}
-                      </button>
-                      <button
-                        type="button"
-                        onClick={handleVerifyMobileOTP}
-                        disabled={
-                          isVerifyingMobileOTP ||
-                          mobileVerified ||
-                          !canVerifyMobile
-                        }
-                        className="small-button verify-button"
-                      >
-                        {isVerifyingMobileOTP ? "Verifying..." : "Verify"}
-                      </button>
-                    </div>
-                    {errors.mobileOtp && (
-                      <div className="error-message">{errors.mobileOtp}</div>
-                    )}
-                    {mobileVerified && (
-                      <div
-                        className="success-message"
-                        style={{ marginTop: "5px" }}
-                      >
-                        Mobile number verified successfully!
-                      </div>
-                    )}
+                  <div
+                    className="form-field third-width"
+                    style={{ display: "flex", flexDirection: "column" }}
+                  >
+                    <label className="form-label">Mobile OTP*</label>
+                    <input
+                      type="text"
+                      placeholder="Enter OTP"
+                      value={mobileVerificationCode}
+                      onChange={(e) =>
+                        setMobileVerificationCode(e.target.value)
+                      }
+                      disabled={mobileVerified || !canVerifyMobile}
+                      className={`form-input ${
+                        errors.mobileOtp ? "error" : ""
+                      }`}
+                      required
+                      style={{ width: "100%" }}
+                    />
+                    {/* Removed inline success and error messages for mobile OTP */}
+                  </div>
+
+                  <div
+                    className="form-field third-width"
+                    style={{
+                      display: "flex",
+                      alignItems: "flex-end",
+                      gap: "8px",
+                    }}
+                  >
+                    <button
+                      type="button"
+                      onClick={handleSendMobileOTP}
+                      disabled={isSendingMobileOTP || mobileVerified}
+                      className="small-button"
+                      style={{ flex: "1" }}
+                    >
+                      {isSendingMobileOTP
+                        ? "Sending..."
+                        : mobileVerificationSent
+                        ? "Resend"
+                        : "Send OTP"}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleVerifyMobileOTP}
+                      disabled={
+                        isVerifyingMobileOTP ||
+                        mobileVerified ||
+                        !canVerifyMobile
+                      }
+                      className="small-button verify-button"
+                      style={{ flex: "1" }}
+                    >
+                      {isVerifyingMobileOTP ? "Verifying..." : "Verify"}
+                    </button>
                   </div>
                 </div>
 
+                {/* Email input row */}
                 <div className="form-row">
                   <div className="form-field third-width">
                     <label htmlFor="email" className="form-label">
@@ -620,6 +688,57 @@ export default function VotingRegister() {
                     )}
                   </div>
 
+                  <div className="form-field third-width">
+                    <label className="form-label">Email Verification*</label>
+                    <input
+                      type="text"
+                      placeholder="Verification code"
+                      value={verificationCode}
+                      onChange={(e) => setVerificationCode(e.target.value)}
+                      disabled={emailVerified || !canVerifyEmail}
+                      className={`form-input ${errors.otp ? "error" : ""}`}
+                      required
+                    />
+                    {/* Removed inline success and error messages for email verification */}
+                  </div>
+
+                  <div
+                    className="form-field third-width"
+                    style={{
+                      display: "flex",
+                      gap: "8px",
+                      alignItems: "flex-end",
+                    }}
+                  >
+                    <button
+                      type="button"
+                      onClick={handleSendVerification}
+                      disabled={isSendingVerification || emailVerified}
+                      className="small-button"
+                      style={{ flex: 1 }}
+                    >
+                      {isSendingVerification
+                        ? "Sending..."
+                        : emailVerificationSent
+                        ? "Resend"
+                        : "Send code"}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleVerifyEmail}
+                      disabled={
+                        isVerifyingEmail || emailVerified || !canVerifyEmail
+                      }
+                      className="small-button verify-button"
+                      style={{ flex: 1 }}
+                    >
+                      {isVerifyingEmail ? "Verifying..." : "Verify"}
+                    </button>
+                  </div>
+                </div>
+
+                {/* Password row */}
+                <div className="form-row">
                   <div className="form-field third-width">
                     <label htmlFor="password" className="form-label">
                       Password*
@@ -649,6 +768,7 @@ export default function VotingRegister() {
                       <div className="error-message">{errors.password}</div>
                     )}
                   </div>
+
                   <div className="form-field third-width">
                     <label htmlFor="confirmPassword" className="form-label">
                       Confirm Password*
@@ -684,57 +804,7 @@ export default function VotingRegister() {
                   </div>
                 </div>
 
-                {/* Email verification logic is now a separate row below the email input */}
-                <div className="form-row">
-                  <div className="form-field full-width email-verification-group">
-                    <label className="form-label">Email Verification*</label>
-                    <div className="email-verification-controls">
-                      <input
-                        type="text"
-                        placeholder="Verification code"
-                        value={verificationCode}
-                        onChange={(e) => setVerificationCode(e.target.value)}
-                        disabled={emailVerified || !canVerifyEmail}
-                        className={`form-input ${errors.otp ? "error" : ""}`}
-                        required
-                      />
-                      <button
-                        type="button"
-                        onClick={handleSendVerification}
-                        disabled={isSendingVerification || emailVerified}
-                        className="small-button"
-                      >
-                        {isSendingVerification
-                          ? "Sending..."
-                          : emailVerificationSent
-                          ? "Resend"
-                          : "Send code"}
-                      </button>
-                      <button
-                        type="button"
-                        onClick={handleVerifyEmail}
-                        disabled={
-                          isVerifyingEmail || emailVerified || !canVerifyEmail
-                        }
-                        className="small-button verify-button"
-                      >
-                        {isVerifyingEmail ? "Verifying..." : "Verify"}
-                      </button>
-                    </div>
-                    {errors.otp && (
-                      <div className="error-message">{errors.otp}</div>
-                    )}
-                    {emailVerified && (
-                      <div
-                        className="success-message"
-                        style={{ marginTop: "5px" }}
-                      >
-                        Email verified successfully!
-                      </div>
-                    )}
-                  </div>
-                </div>
-
+                {/* Account type */}
                 <div className="form-field">
                   <label className="form-label">Account Type*</label>
                   <div className="register-role-selection">
@@ -778,6 +848,7 @@ export default function VotingRegister() {
                     </div>
                   </div>
                 </div>
+
                 {formData.role === "admin" && (
                   <div className="form-row">
                     <div className="form-field third-width">
@@ -810,6 +881,7 @@ export default function VotingRegister() {
                     </div>
                   </div>
                 )}
+
                 <button
                   type="submit"
                   disabled={isLoading}

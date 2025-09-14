@@ -3,7 +3,6 @@ const mongoose = require("mongoose");
 const voterSchema = new mongoose.Schema(
   {
     firstName: { type: String, required: true },
-    middleName: { type: String },
     lastName: { type: String, required: true },
     email: { type: String, required: true, unique: true },
     password: { type: String, required: true },
@@ -13,14 +12,21 @@ const voterSchema = new mongoose.Schema(
       required: true,
       default: "voter",
     },
+    aadhaar: {
+      type: String,
+      unique: true,
+      required: true,
+      trim: true,
+      match: /^\d{12}$/, // regex to ensure 12 digit numbers only (optional)
+    },
     gender: {
       type: String,
       enum: ["male", "female", "other", "prefer-not-to-say"],
     },
     dob: { type: Date },
-    mobile: { type: String },
-    voterId: { type: String, unique: true, sparse: true },
-    photo: { type: String, required: true },
+    mobile: { type: String, required: true, unique: true },
+    voterId: { type: String, unique: true },
+    photo: { type: String, required: true, unique: true },
     hasVoted: {
       type: Boolean,
       default: false,

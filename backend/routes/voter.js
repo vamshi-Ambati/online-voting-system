@@ -6,6 +6,8 @@ const {
   verifyEmail,
   handleRegister,
   handleLogin,
+  sendMobileOTP,
+  verifyMobileOTP,
 } = require("../controllers/voterController");
 
 // Configure Multer for file uploads
@@ -39,5 +41,10 @@ router.post("/send-email-verification", sendEmailVerification);
 // @desc    Verify the OTP from the user's email
 // @access  Public
 router.post("/verify-email", verifyEmail);
+
+router.post("/send-mobile-otp", sendMobileOTP);
+router.post("/verify-mobile-otp", verifyMobileOTP);
+
+
 
 module.exports = router;

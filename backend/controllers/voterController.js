@@ -1,5 +1,6 @@
 const Voter = require("../models/Voter");
-const OTP = require("../models/Otp");
+const EmailCode = require("../models/EmailCode"); // correct import and capitalization
+const MobileOTP = require("../models/MobileOTP");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const dotenv = require("dotenv");
@@ -7,8 +8,8 @@ const nodemailer = require("nodemailer");
 const otpGenerator = require("otp-generator");
 const fs = require("fs");
 const path = require("path");
+const axios = require("axios");
 
-// These imports are required for the face descriptor logic in handleRegister
 const faceapi = require("@vladmandic/face-api");
 const canvas = require("canvas");
 const { Canvas, Image, ImageData } = canvas;
@@ -18,55 +19,22 @@ dotenv.config();
 
 const transporter = nodemailer.createTransport({
   service: "gmail",
-  auth: {
-    user: process.env.GMAIL_USER,
-    pass: process.env.GMAIL_PASS,
-  },
+  auth: { user: process.env.GMAIL_USER, pass: process.env.GMAIL_PASS },
 });
 
-// This function loads the models once at startup and is essential for faceapi to work
 let modelsLoaded = false;
 async function ensureModels() {
   if (!modelsLoaded) {
-    console.log("Loading face-api.js models...");
     const MODEL_PATH = path.resolve(__dirname, "../face-api-models");
     await faceapi.nets.ssdMobilenetv1.loadFromDisk(MODEL_PATH);
     await faceapi.nets.faceRecognitionNet.loadFromDisk(MODEL_PATH);
     await faceapi.nets.faceLandmark68Net.loadFromDisk(MODEL_PATH);
     modelsLoaded = true;
-    console.log("Face-api.js models loaded successfully.");
   }
 }
 ensureModels();
 
-const generateUniqueVoterId = async (firstName) => {
-  const MAX_ATTEMPTS = 3;
-  let attempts = 0;
-  let voterId;
-  let isUnique = false;
-
-  while (attempts < MAX_ATTEMPTS && !isUnique) {
-    const base = firstName.replace(/\s+/g, "").toUpperCase().slice(0, 4);
-    const randomNum = Math.floor(1000 + Math.random() * 9000);
-    voterId = `${base}${randomNum}`;
-
-    const existingVoter = await Voter.findOne({ voterId });
-    if (!existingVoter) {
-      isUnique = true;
-    }
-    attempts++;
-  }
-
-  if (!isUnique) {
-    throw new Error(
-      "Failed to generate unique Voter ID after multiple attempts"
-    );
-  }
-
-  return voterId;
-};
-
-const sendWelcomeEmail = async (email, username, voterId) => {
+const sendWelcomeEmail = async (email, username) => {
   const currentYear = new Date().getFullYear();
   const supportEmail = process.env.SUPPORT_EMAIL || "support@voting-system.com";
   const senderName = process.env.EMAIL_SENDER_NAME || "Voting System Team";
@@ -74,51 +42,22 @@ const sendWelcomeEmail = async (email, username, voterId) => {
   const mailOptions = {
     from: `"${senderName}" <${process.env.GMAIL_USER}>`,
     to: email,
-    subject: `Your Voting Account is Ready - Voter ID: ${voterId}`,
-    text: `Hello ${username},\n\nWelcome to our voting platform. Your registration is complete.\n\nYour Voter ID: ${voterId}\n\nPlease keep this ID secure as you'll need it to access the voting system.\n\nFor any questions, contact: ${supportEmail}\n\nBest regards,\n${senderName}`,
+    subject: `Your Voting Account is Ready`,
     html: `
-      <!DOCTYPE html>
-      <html>
-      <head>
-        <meta charset="UTF-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <title>Voter Registration Confirmation</title>
-        <style>
-          body { font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; line-height: 1.6; color: #333; background: #f7f7f7; margin: 0; padding: 0;}
-          .email-container { max-width: 600px; margin: 0 auto; background: #fff; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.05);}
-          .header {background: linear-gradient(135deg, #1e3a8a 0%, #1e40af 100%); color: #fff; padding: 30px; text-align: center; border-bottom: 4px solid #1d4ed8;}
-          .content {padding: 30px;}
-          .voter-id-box {background: #f8f9fa; border-left: 4px solid #3498db; padding: 20px; margin: 20px 0; font-size: 18px; text-align: center; border-radius: 0 4px 4px 0;}
-          .footer {padding: 20px; text-align: center; font-size: 12px; color: #64748b; background: #f1f5f9; border-top: 1px solid #e2e8f0;}
-          @media only screen and (max-width:600px){ .email-container {width: 100%;} .header, .content {padding: 20px;} }
-        </style>
-      </head>
-      <body>
-        <div class="email-container">
-          <div class="header"><h1>Welcome to Voting System</h1></div>
-          <div class="content">
-            <p>Hello ${username},</p>
-            <p>Thank you for registering with our secure voting platform. Your account has been successfully created.</p>
-            <div class="voter-id-box">
-              <strong>Your Voter ID:</strong><br />
-              <span style="font-size: 22px; letter-spacing: 1px;">${voterId}</span>
-            </div>
-            <p>Please keep this ID confidential as it will be required for all voting activities.</p>
-            <p>If you have any questions or need assistance, please contact our support team at <a href="mailto:${supportEmail}" style="color: #2563eb; text-decoration: none;">${supportEmail}</a>.</p>
-            <p>Best regards,<br /><strong>${senderName}</strong></p>
-          </div>
-          <div class="footer">
-            <p>&copy; ${currentYear} ${senderName}. All rights reserved.</p>
-            <p><a href="#" style="color: #2563eb; text-decoration: none;">Privacy Policy</a> | <a href="#" style="color: #2563eb; text-decoration: none;">Terms of Service</a></p>
-          </div>
-        </div>
-      </body>
-      </html>`,
+      <div style="font-family: Arial, sans-serif; padding:20px;">
+        <h2>Welcome to Voting System</h2>
+        <p>Hello ${username},</p>
+        <p>Your account has been successfully created on our secure voting platform.</p>
+        <p>Please keep your login credentials safe.</p>
+        <p>For help, contact: <a href="mailto:${supportEmail}">${supportEmail}</a></p>
+        <hr>
+        <small>&copy; ${currentYear} ${senderName}. All rights reserved.</small>
+      </div>
+    `,
   };
 
   try {
     await transporter.sendMail(mailOptions);
-    console.log(`Welcome email sent to ${email}`);
   } catch (error) {
     console.error("Error sending welcome email:", error);
   }
@@ -126,48 +65,44 @@ const sendWelcomeEmail = async (email, username, voterId) => {
 
 const sendEmailVerification = async (req, res) => {
   const { email } = req.body;
-  if (!email) {
-    return res.status(400).json({ message: "Email is required" });
-  }
+  if (!email) return res.status(400).json({ message: "Email is required" });
 
   try {
-    const existingUser = await Voter.findOne({ email });
-    if (existingUser) {
-      return res.status(400).json({
-        success: false,
-        message: "Email already registered",
-      });
+    if (await Voter.findOne({ email })) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Email already registered" });
     }
-
     const otp = otpGenerator.generate(6, {
       digits: true,
       lowerCaseAlphabets: false,
       upperCaseAlphabets: false,
       specialChars: false,
     });
-
-    await OTP.findOneAndReplace({ email }, { email, otp }, { upsert: true });
+    await EmailCode.findOneAndReplace(
+      { email },
+      { email, otp },
+      { upsert: true }
+    );
 
     const mailOptions = {
       from: `"${process.env.EMAIL_SENDER_NAME}" <${process.env.GMAIL_USER}>`,
       to: email,
-      subject: "Voting Portal: Your Email Verification Code",
+      subject: "Voting Portal: Email Verification Code",
       html: `
         <div style="font-family: Arial, sans-serif; padding: 20px; color: #333;">
-          <h2 style="color: #007bff;">Email Verification</h2>
+          <h2 style="color: #1d4ed8;">Email Verification</h2>
           <p>Hello,</p>
-          <p>Thank you for registering. Please use the following code to verify your email address:</p>
-          <h3 style="background: #f4f4f4; padding: 15px; border-radius: 5px; text-align: center; letter-spacing: 5px;">
+          <p>Please use the following 6-digit code to verify your email address:</p>
+          <h3 style="background: #f4f4f4; padding: 15px; text-align: center; letter-spacing: 5px;">
             ${otp}
           </h3>
           <p>This code is valid for 5 minutes.</p>
-          <p>If you did not request this, please ignore this email.</p>
-        </div>
-      `,
+        </div>`,
     };
 
     await transporter.sendMail(mailOptions);
-    res.status(200).json({ message: "Verification email sent successfully" });
+    res.status(200).json({ success: true, message: "Verification email sent" });
   } catch (error) {
     console.error("Error sending verification email:", error);
     res.status(500).json({ message: "Failed to send verification email" });
@@ -176,20 +111,17 @@ const sendEmailVerification = async (req, res) => {
 
 const verifyEmail = async (req, res) => {
   const { email, code } = req.body;
-  if (!email || !code) {
-    return res.status(400).json({ message: "Email and code are required" });
-  }
+  if (!email || !code)
+    return res.status(400).json({ message: "Email and code required" });
 
   try {
-    const otpRecord = await OTP.findOne({ email, otp: code });
-
-    if (!otpRecord) {
+    const otpRecord = await EmailCode.findOne({ email, otp: code });
+    if (!otpRecord)
       return res.status(400).json({ message: "Invalid or expired code" });
-    }
-
-    await OTP.deleteOne({ _id: otpRecord._id });
-
-    res.status(200).json({ message: "Email verified successfully" });
+    await EmailCode.deleteOne({ _id: otpRecord._id });
+    res
+      .status(200)
+      .json({ success: true, message: "Email verified successfully" });
   } catch (error) {
     console.error("Error verifying email:", error);
     res.status(500).json({ message: "Verification failed" });
@@ -199,16 +131,16 @@ const verifyEmail = async (req, res) => {
 const handleRegister = async (req, res) => {
   const {
     firstName,
-    middleName,
     lastName,
     email,
     password,
     role,
     gender,
     dob,
+    aadhaar,
     mobile,
+    voterId,
   } = req.body;
-
   const photoPath = req.file ? req.file.path : null;
 
   try {
@@ -220,41 +152,47 @@ const handleRegister = async (req, res) => {
       !role ||
       !gender ||
       !dob ||
+      !aadhaar ||
       !mobile ||
+      !voterId ||
       !photoPath
     ) {
       if (photoPath) fs.unlinkSync(photoPath);
       return res.status(400).json({
         success: false,
-        message: "Required fields are missing, including the photo",
+        message: "All required fields including photo must be provided",
       });
     }
-
-    const existingUser = await Voter.findOne({ email });
-    if (existingUser) {
+    if (await Voter.findOne({ email })) {
       if (photoPath) fs.unlinkSync(photoPath);
-      return res.status(400).json({
-        success: false,
-        message: "Email already registered",
-      });
+      return res
+        .status(400)
+        .json({ success: false, message: "Email already registered" });
     }
-
-    const existingMobile = await Voter.findOne({ mobile });
-    if (existingMobile) {
+    if (await Voter.findOne({ mobile })) {
       if (photoPath) fs.unlinkSync(photoPath);
-      return res.status(400).json({
-        success: false,
-        message: "Mobile number already registered",
-      });
+      return res
+        .status(400)
+        .json({ success: false, message: "Mobile already registered" });
     }
-
+    if (await Voter.findOne({ aadhaar })) {
+      if (photoPath) fs.unlinkSync(photoPath);
+      return res
+        .status(400)
+        .json({ success: false, message: "Aadhaar already registered" });
+    }
     if (!["voter", "admin"].includes(role)) {
       if (photoPath) fs.unlinkSync(photoPath);
-      return res.status(400).json({
-        success: false,
-        message: "Invalid role",
-      });
+      return res.status(400).json({ success: false, message: "Invalid role" });
     }
+    if (await Voter.findOne({ voterId })) {
+      if (photoPath) fs.unlinkSync(photoPath);
+      return res
+        .status(400)
+        .json({ success: false, message: "Voter ID already registered" });
+    }
+
+    await ensureModels();
 
     const photoBuffer = fs.readFileSync(photoPath);
     const img = await canvas.loadImage(photoBuffer);
@@ -263,131 +201,133 @@ const handleRegister = async (req, res) => {
       .detectSingleFace(img)
       .withFaceLandmarks()
       .withFaceDescriptor();
-
     if (!detection) {
       fs.unlinkSync(photoPath);
       return res.status(400).json({
         success: false,
-        message: "No face detected in the photo. Please use a clear photo.",
+        message: "No face detected in provided photo",
       });
     }
 
     const faceDescriptor = Array.from(detection.descriptor);
-
     const hashedPassword = await bcrypt.hash(password, 10);
-    const userData = {
+
+    const newUser = await Voter.create({
       firstName,
-      middleName: middleName || "",
       lastName,
       email,
       password: hashedPassword,
       role,
       gender,
       dob,
+      aadhaar,
       mobile,
+      voterId,
       photo: photoPath,
       faceDescriptor,
-    };
+    });
 
-    if (role === "voter") {
-      try {
-        userData.voterId = await generateUniqueVoterId(firstName);
-      } catch (error) {
-        console.error("Voter ID generation failed:", error);
-        if (photoPath) fs.unlinkSync(photoPath);
-        return res.status(500).json({
-          success: false,
-          message: "Failed to generate unique Voter ID. Please try again.",
-        });
-      }
-    }
+    await sendWelcomeEmail(email, firstName);
 
-    const newUser = await Voter.create(userData);
-
-    if (role === "voter") {
-      await sendWelcomeEmail(email, firstName, userData.voterId);
-    }
-
-    const response = {
+    res.status(201).json({
       success: true,
       message: "Registration successful",
       role: newUser.role,
-    };
-
-    if (role === "voter") {
-      response.voterId = newUser.voterId;
-    }
-
-    res.status(201).json(response);
+    });
   } catch (error) {
     console.error("Registration error:", error);
-
     if (photoPath) fs.unlinkSync(photoPath);
-    if (error.name === "MongoServerError" && error.code === 11000) {
-      return res.status(400).json({
-        success: false,
-        message: "Registration failed - duplicate data",
-      });
+    res
+      .status(500)
+      .json({ success: false, message: "Registration failed. Try again." });
+  }
+};
+
+const sendMobileOTP = async (req, res) => {
+  const { mobile } = req.body;
+  if (!mobile || !/^\d{10}$/.test(mobile))
+    return res
+      .status(400)
+      .json({ message: "Valid 10-digit mobile number required" });
+
+  try {
+    const response = await axios.get(
+      `https://2factor.in/API/V1/${process.env.TWOFCTOR_IN_API_KEY}/SMS/${mobile}/AUTOGEN`
+    );
+
+    if (response.data.Status === "Success") {
+      const sessionId = response.data.Details;
+      await MobileOTP.findOneAndReplace(
+        { mobile },
+        { mobile, sessionId },
+        { upsert: true }
+      );
+      res.status(200).json({ success: true, message: "OTP sent to mobile" });
+    } else {
+      throw new Error("Failed to send OTP");
     }
-    res.status(500).json({
-      success: false,
-      message: "Registration failed. Please try again.",
-    });
+  } catch (error) {
+    console.error("Error sending mobile OTP:", error.message || error);
+    res.status(500).json({ message: "Failed to send OTP" });
+  }
+};
+
+const verifyMobileOTP = async (req, res) => {
+  const { mobile, otp } = req.body;
+  if (!mobile || !otp)
+    return res.status(400).json({ message: "Mobile and OTP are required" });
+
+  try {
+    const record = await MobileOTP.findOne({ mobile });
+    if (!record || !record.sessionId)
+      return res
+        .status(400)
+        .json({ message: "No OTP session found. Please request OTP again." });
+
+    const response = await axios.get(
+      `https://2factor.in/API/V1/${process.env.TWOFCTOR_IN_API_KEY}/SMS/VERIFY/${record.sessionId}/${otp}`
+    );
+
+    if (
+      response.data.Status === "Success" &&
+      response.data.Details === "OTP Matched"
+    ) {
+      await MobileOTP.deleteOne({ _id: record._id });
+      res.status(200).json({
+        success: true,
+        message: "Mobile number verified successfully",
+      });
+    } else {
+      res.status(400).json({ message: "Invalid or expired OTP" });
+    }
+  } catch (error) {
+    console.error("Error verifying mobile OTP:", error.message || error);
+    res.status(500).json({ message: "OTP verification failed" });
   }
 };
 
 const handleLogin = async (req, res) => {
   try {
-    const { email, voterId, password, role } = req.body;
+    const { email, password, role } = req.body;
+    if (!email || !password || !role)
+      return res
+        .status(400)
+        .json({ message: "Email, password and role are required" });
 
-    if (!password || !role) {
-      return res.status(400).json({
-        success: false,
-        message: "Password and role are required",
-      });
-    }
+    const user = await Voter.findOne({ email, role });
+    if (!user)
+      return res
+        .status(401)
+        .json({ success: false, message: "Invalid credentials" });
 
-    let user;
-    if (role === "admin") {
-      if (!email) {
-        return res.status(400).json({
-          success: false,
-          message: "Email is required for admin login",
-        });
-      }
-      user = await Voter.findOne({ email, role: "admin" });
-    } else {
-      if (!voterId) {
-        return res.status(400).json({
-          success: false,
-          message: "Voter ID is required for voter login",
-        });
-      }
-      user = await Voter.findOne({ voterId, role: "voter" });
-    }
-
-    if (!user) {
-      return res.status(401).json({
-        success: false,
-        message: "Invalid credentials",
-      });
-    }
-
-    const isPasswordValid = await bcrypt.compare(password, user.password);
-    if (!isPasswordValid) {
-      return res.status(401).json({
-        success: false,
-        message: "Invalid credentials",
-      });
-    }
+    const valid = await bcrypt.compare(password, user.password);
+    if (!valid)
+      return res
+        .status(401)
+        .json({ success: false, message: "Invalid credentials" });
 
     const token = jwt.sign(
-      {
-        id: user._id,
-        email: user.email,
-        role: user.role,
-        voterId: user.voterId,
-      },
+      { id: user._id, email: user.email, role: user.role },
       process.env.SECRET_KEY,
       { expiresIn: "7d" }
     );
@@ -399,24 +339,19 @@ const handleLogin = async (req, res) => {
       user: {
         id: user._id,
         firstName: user.firstName,
-        middleName: user.middleName,
         lastName: user.lastName,
         email: user.email,
         gender: user.gender,
         dob: user.dob,
         mobile: user.mobile,
+        aadhaar: user.aadhaar,
         role: user.role,
-        voterId: user.voterId,
         photo: user.photo,
       },
     });
   } catch (error) {
     console.error("Login error:", error);
-    res.status(500).json({
-      success: false,
-      message: "Internal server error",
-      error: process.env.NODE_ENV === "development" ? error.message : undefined,
-    });
+    res.status(500).json({ success: false, message: "Internal server error" });
   }
 };
 
@@ -425,4 +360,6 @@ module.exports = {
   verifyEmail,
   handleRegister,
   handleLogin,
+  sendMobileOTP,
+  verifyMobileOTP,
 };
