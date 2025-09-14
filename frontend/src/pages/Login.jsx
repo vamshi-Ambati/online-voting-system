@@ -28,10 +28,10 @@ export default function VotingLogin() {
   const [loginSuccess, setLoginSuccess] = useState(false);
 
   const handleInputChange = (e) => {
-    const { name, value } = e.target;
+    const { name, value, type, checked } = e.target;
     setFormData((prev) => ({
       ...prev,
-      [name]: value,
+      [name]: type === "checkbox" ? checked : value,
     }));
 
     if (errors[name]) {
@@ -41,7 +41,6 @@ export default function VotingLogin() {
 
   const validateForm = () => {
     const newErrors = {};
-
     if (!formData.credential.trim()) {
       newErrors.credential =
         formData.role === "admin"
@@ -53,13 +52,11 @@ export default function VotingLogin() {
     ) {
       newErrors.credential = "Please enter a valid email";
     }
-
     if (!formData.password) {
       newErrors.password = "Password is required";
     } else if (formData.password.length < 6) {
       newErrors.password = "Password must be at least 6 characters";
     }
-
     return newErrors;
   };
 
@@ -93,18 +90,18 @@ export default function VotingLogin() {
       });
 
       const data = await response.json();
-      if (!response.ok) {
-        throw new Error(data.message || "Login failed");
-      }
 
-      // Always save token and user in localStorage
+      if (!response.ok) throw new Error(data.message || "Login failed");
+
+      // Save token and user data to localStorage unconditionally
       localStorage.setItem("authToken", data.token);
+
+      // Save user data (without middleName)
       localStorage.setItem(
         "userData",
         JSON.stringify({
           _id: data.user.id,
           firstName: data.user.firstName,
-          middleName: data.user.middleName || "",
           lastName: data.user.lastName,
           email: data.user.email,
           role: data.user.role,
@@ -112,14 +109,18 @@ export default function VotingLogin() {
           dob: data.user.dob || "",
           mobile: data.user.mobile || "",
           voterId: data.user.voterId || "",
+          aadhaar: data.user.aadhaar || "",
+          // Save photo URL if returned from backend, else empty string
+          photo: data.user.photo || "",
         })
       );
 
       setLoginSuccess(true);
 
-      setTimeout(() => {
-        navigate("/dashboard");
-      }, 1500);
+      setTimeout(
+        () => navigate(formData.role === "admin" ? "/dashboard" : "/dashboard"),
+        1500
+      );
     } catch (error) {
       console.error("Login error:", error);
       toast.error(error.message || "An error occurred during login");
@@ -244,16 +245,6 @@ export default function VotingLogin() {
                 {errors.password && (
                   <div className="error-message">{errors.password}</div>
                 )}
-              </div>
-
-              <div className="form-options">
-                <button
-                  type="button"
-                  className="forgot-password"
-                  onClick={() => navigate("/forgot-password")}
-                >
-                  Forgot password?
-                </button>
               </div>
 
               <button

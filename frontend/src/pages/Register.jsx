@@ -44,12 +44,9 @@ export default function VotingRegister() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [showPin, setShowPin] = useState(false);
-  const [errors, setErrors] = useState({});
   const [isLoading, setIsLoading] = useState(false);
   const [registerSuccess, setRegisterSuccess] = useState(false);
-  const [generatedVoterId, setGeneratedVoterId] = useState("");
 
-  // Email verification state
   const [emailVerificationSent, setEmailVerificationSent] = useState(false);
   const [verificationCode, setVerificationCode] = useState("");
   const [emailVerified, setEmailVerified] = useState(false);
@@ -57,7 +54,6 @@ export default function VotingRegister() {
   const [isVerifyingEmail, setIsVerifyingEmail] = useState(false);
   const [canVerifyEmail, setCanVerifyEmail] = useState(false);
 
-  // Mobile OTP verification state
   const [mobileVerificationSent, setMobileVerificationSent] = useState(false);
   const [mobileVerificationCode, setMobileVerificationCode] = useState("");
   const [mobileVerified, setMobileVerified] = useState(false);
@@ -67,7 +63,6 @@ export default function VotingRegister() {
 
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target;
-
     setFormData((prev) => ({
       ...prev,
       [name]: type === "checkbox" ? checked : value,
@@ -86,27 +81,17 @@ export default function VotingRegister() {
       setMobileVerificationCode("");
       setCanVerifyMobile(false);
     }
-
-    if (errors[name]) {
-      setErrors((prev) => ({ ...prev, [name]: "" }));
-    }
   };
 
   const handlePhotoUpload = (e) => {
     const file = e.target.files[0];
-    if (file) {
-      setUploadedPhoto(file);
-      if (errors.photo) {
-        setErrors((prev) => ({ ...prev, photo: "" }));
-      }
-    }
+    if (file) setUploadedPhoto(file);
   };
 
   const handleRemovePhoto = () => {
     setUploadedPhoto(null);
   };
 
-  // Send email verification code
   const handleSendVerification = async () => {
     if (!formData.email) {
       toast.error("Enter a valid email to send verification");
@@ -132,7 +117,6 @@ export default function VotingRegister() {
     }
   };
 
-  // Verify email
   const handleVerifyEmail = async () => {
     if (!verificationCode.trim()) {
       toast.error("Enter verification code");
@@ -158,7 +142,6 @@ export default function VotingRegister() {
     }
   };
 
-  // Send mobile OTP
   const handleSendMobileOTP = async () => {
     if (!formData.mobile || !/^\d{10}$/.test(formData.mobile)) {
       toast.error("Enter a valid 10-digit mobile number");
@@ -183,7 +166,6 @@ export default function VotingRegister() {
     }
   };
 
-  // Verify mobile OTP
   const handleVerifyMobileOTP = async () => {
     if (!mobileVerificationCode.trim()) {
       toast.error("Enter the OTP");
@@ -212,79 +194,44 @@ export default function VotingRegister() {
     }
   };
 
-  // Validate form fields
   const validateForm = () => {
-    const newErrors = {};
-    if (!uploadedPhoto) {
-      newErrors.photo = "A photo is required for face verification.";
-    }
-    if (!formData.firstName.trim()) {
-      newErrors.firstName = "First name is required";
-    } else if (formData.firstName.length < 2) {
-      newErrors.firstName = "First name must be at least 2 characters";
-    }
-    if (!formData.lastName.trim()) {
-      newErrors.lastName = "Last name is required";
-    } else if (formData.lastName.length < 2) {
-      newErrors.lastName = "Last name must be at least 2 characters";
-    }
-    if (!formData.voterId.trim()) {
-      newErrors.voterId = "Voter ID is required";
-    }
-    if (!formData.email.trim()) {
-      newErrors.email = "Email is required";
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
-      newErrors.email = "Please enter a valid email";
-    }
-    if (!emailVerified) {
-      newErrors.otp = "Please verify your email address.";
-    }
-    if (!formData.mobile.trim()) {
-      newErrors.mobile = "Mobile number is required";
-    } else if (!/^\d{10}$/.test(formData.mobile)) {
-      newErrors.mobile = "Please enter a valid 10-digit mobile number";
-    }
-    if (!mobileVerified) {
-      newErrors.mobileOtp = "Please verify your mobile number.";
-    }
-    if (!formData.password) {
-      newErrors.password = "Password is required";
-    } else if (formData.password.length < 6) {
-      newErrors.password = "Password must be at least 6 characters";
-    }
-    if (!formData.confirmPassword) {
-      newErrors.confirmPassword = "Please confirm your password";
-    } else if (formData.password !== formData.confirmPassword) {
-      newErrors.confirmPassword = "Passwords do not match";
-    }
-    if (!formData.gender) {
-      newErrors.gender = "Gender is required";
-    }
-    if (!formData.dob) {
-      newErrors.dob = "Date of birth is required";
-    }
-    if (!formData.aadhaar.trim()) {
-      newErrors.aadhaar = "Aadhaar number is required";
-    } else if (!/^\d{12}$/.test(formData.aadhaar)) {
-      newErrors.aadhaar = "Please enter a valid 12-digit Aadhaar number";
-    }
-    if (formData.role === "admin") {
-      if (!formData.pin) {
-        newErrors.pin = "Admin PIN is required";
-      } else if (formData.pin !== "vamshi") {
-        newErrors.pin = "Incorrect PIN";
-      }
-    }
-    return newErrors;
+    if (!uploadedPhoto) return "A photo is required for face verification.";
+    if (!formData.firstName.trim() || formData.firstName.length < 2)
+      return "Enter a valid first name";
+    if (!formData.lastName.trim() || formData.lastName.length < 2)
+      return "Enter a valid last name";
+    if (!formData.voterId.trim()) return "Voter ID is required";
+    if (
+      !formData.email.trim() ||
+      !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)
+    )
+      return "Enter a valid email";
+    if (!formData.mobile.trim() || !/^\d{10}$/.test(formData.mobile))
+      return "Enter a valid 10-digit mobile number";
+    if (!formData.password || formData.password.length < 6)
+      return "Password must be at least 6 characters";
+    if (formData.password !== formData.confirmPassword)
+      return "Passwords do not match";
+    if (!formData.gender) return "Gender is required";
+    if (!formData.dob) return "Date of birth is required";
+    if (!formData.aadhaar.trim() || !/^\d{12}$/.test(formData.aadhaar))
+      return "Enter a valid 12-digit Aadhaar number";
+    if (formData.role === "admin" && formData.pin !== "vamshi")
+      return "Incorrect or missing Admin PIN";
+    return null;
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const formErrors = validateForm();
-    if (Object.keys(formErrors).length > 0) {
-      setErrors(formErrors);
+    const errorMessage = validateForm();
+    if (errorMessage) {
+      toast.error(errorMessage);
       return;
     }
+     if (!uploadedPhoto) {
+       toast.error("Please upload a photo");
+       return;
+     }
     setIsLoading(true);
 
     const data = new FormData();
@@ -301,42 +248,13 @@ export default function VotingRegister() {
         body: data,
       });
       const responseData = await response.json();
-      if (!response.ok) {
+      if (!response.ok)
         throw new Error(responseData.message || "Registration failed");
-      }
-
+      toast.success("Registration successful!");
       setRegisterSuccess(true);
-      if (formData.role === "voter") {
-        setGeneratedVoterId(responseData.voterId);
-      } else {
-        toast.success("Admin registration complete!");
-      }
-
-      setTimeout(() => navigate("/login"), 5000);
+      setTimeout(() => navigate("/login"), 4000);
     } catch (error) {
-      console.error("Registration error:", error);
-      const message = error.message || "";
-
-      if (message.includes("Email already registered")) {
-        toast.error("This email is already in use");
-        setErrors({ email: "Email already registered" });
-      } else if (message.includes("Mobile already registered")) {
-        toast.error("This mobile number is already in use");
-        setErrors({ mobile: "Mobile number already registered" });
-      } else if (message.includes("Voter ID already registered")) {
-        toast.error("This voter ID is already registered");
-        setErrors({ voterId: "Voter ID must be unique" });
-      } else if (message.includes("unique Aadhaar number")) {
-        toast.error("This Aadhaar number is already registered");
-        setErrors({ aadhaar: "Aadhaar must be unique" });
-      } else if (
-        message.includes("All required fields including photo must be provided")
-      ) {
-        toast.error("Please upload a passport-sized photo");
-        setErrors({ photo: "Photo validation failed" });
-      } else {
-        toast.error(message || "Registration failed");
-      }
+      toast.error(error.message || "Registration failed");
     } finally {
       setIsLoading(false);
     }
@@ -361,19 +279,7 @@ export default function VotingRegister() {
                   <FaCheckCircle className="success-icon" />
                   <div>
                     <p className="success-text">
-                      Registration successful!{" "}
-                      {formData.role === "voter" && "Your voter ID is:"}
-                    </p>
-                    {formData.role === "voter" && (
-                      <div className="voter-id-display">{generatedVoterId}</div>
-                    )}
-                    <p className="success-note">
-                      {formData.role === "voter"
-                        ? "Please save this ID. You'll need it to login."
-                        : "Your account will be verified by an administrator before you can login."}
-                    </p>
-                    <p className="redirect-text">
-                      Redirecting to login page in 5 seconds...
+                      Registration successful! Redirecting to login...
                     </p>
                   </div>
                 </div>
@@ -386,23 +292,21 @@ export default function VotingRegister() {
                 </label>
                 <div className="photo-upload-container">
                   {!uploadedPhoto && (
-                    <>
-                      <label
-                        htmlFor="photo-upload-input"
-                        className="photo-upload-placeholder"
-                      >
-                        <FaCamera className="upload-icon" />
-                        <span className="upload-text">Upload Photo</span>
-                        <input
-                          type="file"
-                          id="photo-upload-input"
-                          className="photo-upload-input"
-                          accept="image/*"
-                          onChange={handlePhotoUpload}
-                          // required
-                        />
-                      </label>
-                    </>
+                    <label
+                      htmlFor="photo-upload-input"
+                      className="photo-upload-placeholder"
+                    >
+                      <FaCamera className="upload-icon" />
+                      <span className="upload-text">Upload Photo</span>
+                      <input
+                        type="file"
+                        id="photo-upload-input"
+                        className="photo-upload-input"
+                        accept="image/*"
+                        onChange={handlePhotoUpload}
+                        required
+                      />
+                    </label>
                   )}
                   {uploadedPhoto && (
                     <div className="photo-preview-container">
@@ -422,101 +326,69 @@ export default function VotingRegister() {
                     </div>
                   )}
                 </div>
-                {errors.photo && (
-                  <div className="error-message photo-error">
-                    {errors.photo}
-                  </div>
-                )}
 
                 {/* Name and Voter ID row */}
                 <div className="form-row">
                   <div className="form-field third-width">
-                    <label htmlFor="firstName" className="form-label">
-                      First Name*
-                    </label>
+                    <label className="form-label">First Name*</label>
                     <div className="input-with-icon">
                       <FaUser className="input-icon" />
                       <input
                         type="text"
-                        id="firstName"
                         name="firstName"
                         value={formData.firstName}
                         onChange={handleInputChange}
-                        className={`form-input ${
-                          errors.firstName ? "error" : ""
-                        }`}
+                        className="form-input"
                         placeholder="First name"
                         required
                       />
                     </div>
-                    {errors.firstName && (
-                      <div className="error-message">{errors.firstName}</div>
-                    )}
                   </div>
 
                   <div className="form-field third-width">
-                    <label htmlFor="lastName" className="form-label">
-                      Last Name*
-                    </label>
+                    <label className="form-label">Last Name*</label>
                     <div className="input-with-icon">
                       <FaUser className="input-icon" />
                       <input
                         type="text"
-                        id="lastName"
                         name="lastName"
                         value={formData.lastName}
                         onChange={handleInputChange}
-                        className={`form-input ${
-                          errors.lastName ? "error" : ""
-                        }`}
+                        className="form-input"
                         placeholder="Last name"
                         required
                       />
                     </div>
-                    {errors.lastName && (
-                      <div className="error-message">{errors.lastName}</div>
-                    )}
                   </div>
 
                   <div className="form-field third-width">
-                    <label htmlFor="voterId" className="form-label">
-                      Voter ID*
-                    </label>
+                    <label className="form-label">Voter ID*</label>
                     <div className="input-with-icon">
                       <FaIdCard className="input-icon" />
                       <input
                         type="text"
-                        id="voterId"
                         name="voterId"
                         value={formData.voterId}
                         onChange={handleInputChange}
-                        className={`form-input ${
-                          errors.voterId ? "error" : ""
-                        }`}
+                        className="form-input"
                         placeholder="Voter ID"
                         required
                       />
                     </div>
-                    {errors.voterId && (
-                      <div className="error-message">{errors.voterId}</div>
-                    )}
                   </div>
                 </div>
 
                 {/* Gender, DOB, Aadhaar row */}
                 <div className="form-row">
                   <div className="form-field third-width">
-                    <label htmlFor="gender" className="form-label">
-                      Gender*
-                    </label>
+                    <label className="form-label">Gender*</label>
                     <div className="input-with-icon">
                       <FaVenusMars className="input-icon" />
                       <select
-                        id="gender"
                         name="gender"
                         value={formData.gender}
                         onChange={handleInputChange}
-                        className={`form-input ${errors.gender ? "error" : ""}`}
+                        className="form-input"
                         required
                       >
                         <option value="">Select gender</option>
@@ -528,81 +400,58 @@ export default function VotingRegister() {
                         </option>
                       </select>
                     </div>
-                    {errors.gender && (
-                      <div className="error-message">{errors.gender}</div>
-                    )}
                   </div>
 
                   <div className="form-field third-width">
-                    <label htmlFor="dob" className="form-label">
-                      Date of Birth*
-                    </label>
+                    <label className="form-label">Date of Birth*</label>
                     <div className="input-with-icon">
                       <FaCalendarAlt className="input-icon" />
                       <input
                         type="date"
-                        id="dob"
                         name="dob"
                         value={formData.dob}
                         onChange={handleInputChange}
-                        className={`form-input ${errors.dob ? "error" : ""}`}
+                        className="form-input"
                         required
                       />
                     </div>
-                    {errors.dob && (
-                      <div className="error-message">{errors.dob}</div>
-                    )}
                   </div>
 
                   <div className="form-field third-width">
-                    <label htmlFor="aadhaar" className="form-label">
-                      Aadhaar Number*
-                    </label>
+                    <label className="form-label">Aadhaar Number*</label>
                     <div className="input-with-icon">
                       <FaAsterisk className="input-icon" />
                       <input
                         type="text"
-                        id="aadhaar"
                         name="aadhaar"
                         value={formData.aadhaar}
                         onChange={handleInputChange}
-                        className={`form-input ${
-                          errors.aadhaar ? "error" : ""
-                        }`}
+                        className="form-input"
                         placeholder="12-digit Aadhaar number"
                         maxLength="12"
                         required
                       />
                     </div>
-                    {errors.aadhaar && (
-                      <div className="error-message">{errors.aadhaar}</div>
-                    )}
                   </div>
                 </div>
 
-                {/* Mobile number and OTP verification row */}
+                {/* Mobile number and OTP */}
                 <div className="form-row">
                   <div className="form-field third-width">
-                    <label htmlFor="mobile" className="form-label">
-                      Mobile Number*
-                    </label>
+                    <label className="form-label">Mobile Number*</label>
                     <div className="input-with-icon">
                       <FaMobileAlt className="input-icon" />
                       <input
                         type="tel"
-                        id="mobile"
                         name="mobile"
                         value={formData.mobile}
                         onChange={handleInputChange}
-                        className={`form-input ${errors.mobile ? "error" : ""}`}
+                        className="form-input"
                         placeholder="10-digit mobile number"
                         maxLength="10"
                         required
                       />
                     </div>
-                    {errors.mobile && (
-                      <div className="error-message">{errors.mobile}</div>
-                    )}
                   </div>
 
                   <div
@@ -618,13 +467,9 @@ export default function VotingRegister() {
                         setMobileVerificationCode(e.target.value)
                       }
                       disabled={mobileVerified || !canVerifyMobile}
-                      className={`form-input ${
-                        errors.mobileOtp ? "error" : ""
-                      }`}
+                      className="form-input"
                       required
-                      style={{ width: "100%" }}
                     />
-                    {/* Removed inline success and error messages for mobile OTP */}
                   </div>
 
                   <div
@@ -664,28 +509,22 @@ export default function VotingRegister() {
                   </div>
                 </div>
 
-                {/* Email input row */}
+                {/* Email and Verification */}
                 <div className="form-row">
                   <div className="form-field third-width">
-                    <label htmlFor="email" className="form-label">
-                      Email*
-                    </label>
+                    <label className="form-label">Email*</label>
                     <div className="input-with-icon">
                       <FaEnvelope className="input-icon" />
                       <input
                         type="email"
-                        id="email"
                         name="email"
                         value={formData.email}
                         onChange={handleInputChange}
-                        className={`form-input ${errors.email ? "error" : ""}`}
+                        className="form-input"
                         placeholder="Enter your email"
                         required
                       />
                     </div>
-                    {errors.email && (
-                      <div className="error-message">{errors.email}</div>
-                    )}
                   </div>
 
                   <div className="form-field third-width">
@@ -696,10 +535,9 @@ export default function VotingRegister() {
                       value={verificationCode}
                       onChange={(e) => setVerificationCode(e.target.value)}
                       disabled={emailVerified || !canVerifyEmail}
-                      className={`form-input ${errors.otp ? "error" : ""}`}
+                      className="form-input"
                       required
                     />
-                    {/* Removed inline success and error messages for email verification */}
                   </div>
 
                   <div
@@ -737,23 +575,18 @@ export default function VotingRegister() {
                   </div>
                 </div>
 
-                {/* Password row */}
+                {/* Password */}
                 <div className="form-row">
                   <div className="form-field third-width">
-                    <label htmlFor="password" className="form-label">
-                      Password*
-                    </label>
+                    <label className="form-label">Password*</label>
                     <div className="input-with-icon">
                       <FaLock className="input-icon" />
                       <input
                         type={showPassword ? "text" : "password"}
-                        id="password"
                         name="password"
                         value={formData.password}
                         onChange={handleInputChange}
-                        className={`form-input ${
-                          errors.password ? "error" : ""
-                        }`}
+                        className="form-input"
                         placeholder="Create password"
                         required
                       />
@@ -764,26 +597,17 @@ export default function VotingRegister() {
                         {showPassword ? <FaEyeSlash /> : <FaEye />}
                       </span>
                     </div>
-                    {errors.password && (
-                      <div className="error-message">{errors.password}</div>
-                    )}
                   </div>
-
                   <div className="form-field third-width">
-                    <label htmlFor="confirmPassword" className="form-label">
-                      Confirm Password*
-                    </label>
+                    <label className="form-label">Confirm Password*</label>
                     <div className="input-with-icon">
                       <FaLock className="input-icon" />
                       <input
                         type={showConfirmPassword ? "text" : "password"}
-                        id="confirmPassword"
                         name="confirmPassword"
                         value={formData.confirmPassword}
                         onChange={handleInputChange}
-                        className={`form-input ${
-                          errors.confirmPassword ? "error" : ""
-                        }`}
+                        className="form-input"
                         placeholder="Confirm your password"
                         required
                       />
@@ -796,11 +620,6 @@ export default function VotingRegister() {
                         {showConfirmPassword ? <FaEyeSlash /> : <FaEye />}
                       </span>
                     </div>
-                    {errors.confirmPassword && (
-                      <div className="error-message">
-                        {errors.confirmPassword}
-                      </div>
-                    )}
                   </div>
                 </div>
 
@@ -849,21 +668,19 @@ export default function VotingRegister() {
                   </div>
                 </div>
 
+                {/* Admin PIN for admin role */}
                 {formData.role === "admin" && (
                   <div className="form-row">
                     <div className="form-field third-width">
-                      <label htmlFor="pin" className="form-label">
-                        Admin PIN*
-                      </label>
+                      <label className="form-label">Admin PIN*</label>
                       <div className="input-with-icon">
                         <FaLock className="input-icon" />
                         <input
                           type={showPin ? "text" : "password"}
-                          id="pin"
                           name="pin"
                           value={formData.pin}
                           onChange={handleInputChange}
-                          className={`form-input ${errors.pin ? "error" : ""}`}
+                          className="form-input"
                           placeholder="Enter admin PIN"
                           required
                         />
@@ -875,9 +692,6 @@ export default function VotingRegister() {
                           {showPin ? <FaEyeSlash /> : <FaEye />}
                         </span>
                       </div>
-                      {errors.pin && (
-                        <div className="error-message">{errors.pin}</div>
-                      )}
                     </div>
                   </div>
                 )}
