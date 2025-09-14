@@ -274,7 +274,7 @@ const handleRegister = async (req, res) => {
       photo: photoPath,
       faceDescriptor,
     });
-    console.log("New user registered:", newUser);
+    // console.log("New user registered:", newUser);
 
     res.status(201).json({
       success: true,
