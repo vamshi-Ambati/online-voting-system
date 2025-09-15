@@ -5,12 +5,27 @@ const path = require("path");
 
 const app = express();
 
-// Enable CORS
+// Allowed origins for CORS: comma-separated list in environment variable, or fallback to *
+const allowedOrigins = process.env.CORS_ORIGIN
+  ? process.env.CORS_ORIGIN.split(",")
+  : ["*"];
+
+// Configure CORS middleware with dynamic origin checking
 app.use(
   cors({
-    origin: process.env.CORS_ORIGIN || "*",
+    origin: function (origin, callback) {
+      // Allow requests with no origin (like mobile apps or curl requests)
+      if (!origin) return callback(null, true);
+
+      if (allowedOrigins.includes("*") || allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error("Not allowed by CORS"));
+      }
+    },
     methods: ["GET", "POST", "PUT", "DELETE"],
     allowedHeaders: ["Content-Type", "Authorization"],
+    credentials: true, // if you want to allow cookies/auth headers
   })
 );
 
@@ -61,7 +76,6 @@ app.use((err, req, res, next) => {
     error: err.message || "Something went wrong!",
   });
 });
-
 // Handle 404
 app.use((req, res) => {
   res.status(404).json({ error: "Endpoint not found" });
