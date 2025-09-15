@@ -1,3 +1,4 @@
+// server.js
 const express = require("express");
 const cors = require("cors");
 const path = require("path");
@@ -8,24 +9,23 @@ const app = express();
 /* -------------------- CORS CONFIG -------------------- */
 const allowedOrigins = process.env.CORS_ORIGIN
   ? process.env.CORS_ORIGIN.split(",").map((o) => o.trim())
-  : ["http://localhost:3000"]; // default for local dev
+  : ["http://localhost:5173"]; // default frontend port
 
 app.use(
   cors({
     origin: function (origin, callback) {
-      // Allow requests with no origin (like mobile apps or curl)
-      if (!origin) return callback(null, true);
+      if (!origin) return callback(null, true); // mobile / curl requests
 
       if (allowedOrigins.includes("*") || allowedOrigins.includes(origin)) {
         return callback(null, true);
       } else {
-        console.warn(`❌ CORS blocked request from origin: ${origin}`);
+        console.warn(`❌ CORS blocked: ${origin}`);
         return callback(new Error("Not allowed by CORS"));
       }
     },
     methods: ["GET", "POST", "PUT", "DELETE"],
     allowedHeaders: ["Content-Type", "Authorization"],
-    credentials: true, // allow cookies/auth headers
+    credentials: true,
   })
 );
 
@@ -34,7 +34,6 @@ app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true, limit: "10mb" }));
 
 /* -------------------- STATIC FILES -------------------- */
-// Only serve uploaded files if needed
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
 /* -------------------- DATABASE -------------------- */
@@ -71,7 +70,7 @@ app.get("/", (req, res) => {
 
 /* -------------------- ERROR HANDLING -------------------- */
 app.use((err, req, res, next) => {
-  console.error("🔥 Error:", err.stack);
+  console.error("🔥 Error:", err.message);
   res.status(err.statusCode || 500).json({
     error: err.message || "Something went wrong!",
   });
@@ -82,7 +81,7 @@ app.use((req, res) => res.status(404).json({ error: "Endpoint not found" }));
 /* -------------------- START SERVER -------------------- */
 const PORT = process.env.PORT || 3000;
 const server = app.listen(PORT, () => {
-  console.log(`✅ Server started at http://localhost:${PORT}`);
+  console.log(`✅ Server running at http://localhost:${PORT}`);
   console.log(`🌍 Allowed Origins: ${allowedOrigins.join(", ")}`);
 });
 

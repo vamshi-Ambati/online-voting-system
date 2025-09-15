@@ -11,6 +11,7 @@ const tf = require("@tensorflow/tfjs-node");
 const { Canvas, Image, ImageData } = canvas;
 faceapi.env.monkeyPatch({ Canvas, Image, ImageData });
 
+/* -------------------- MODEL LOADING -------------------- */
 let modelsLoaded = false;
 async function ensureModels() {
   if (!modelsLoaded) {
@@ -19,11 +20,11 @@ async function ensureModels() {
     await faceapi.nets.faceRecognitionNet.loadFromDisk(MODEL_PATH);
     await faceapi.nets.faceLandmark68Net.loadFromDisk(MODEL_PATH);
     modelsLoaded = true;
-    console.log("✅ Face-api.js models loaded successfully.");
+    console.log("✅ Face-api.js models loaded once.");
   }
 }
 
-// Helper: Create labeled face descriptors
+/* -------------------- HELPERS -------------------- */
 async function createLabeledDescriptors(photoPath, label) {
   const img = await canvas.loadImage(photoPath);
 
@@ -42,6 +43,7 @@ async function createLabeledDescriptors(photoPath, label) {
   );
 }
 
+/* -------------------- ROUTE: VERIFY FACE -------------------- */
 router.post("/", async (req, res) => {
   await ensureModels();
 
@@ -52,7 +54,6 @@ router.post("/", async (req, res) => {
       .json({ match: false, message: "Missing voterId or image" });
   }
 
-  let scopeEnded = false;
   try {
     tf.engine().startScope(); // start memory scope
 
@@ -63,10 +64,10 @@ router.post("/", async (req, res) => {
         .json({ match: false, message: "Voter or photo not found" });
     }
 
-    // Resolve absolute path for registered photo
+    // Registered photo path
     let registeredPhotoPath = path.resolve(__dirname, "../", voter.photo);
 
-    // 🔑 fallback: if file not found in 'voters', try 'candidates'
+    // Fallback: try "candidates" folder if not found
     if (!fs.existsSync(registeredPhotoPath)) {
       registeredPhotoPath = registeredPhotoPath.replace("voters", "candidates");
       if (!fs.existsSync(registeredPhotoPath)) {
@@ -76,6 +77,7 @@ router.post("/", async (req, res) => {
       }
     }
 
+    // Create descriptors for stored image
     const labeledDescriptors = await createLabeledDescriptors(
       registeredPhotoPath,
       voterId.toString()
@@ -98,7 +100,7 @@ router.post("/", async (req, res) => {
         .json({ match: false, message: "No face detected in live image." });
     }
 
-    // Compare faces
+    // Compare
     let isMatch = false;
     for (const detection of liveDetections) {
       const bestMatch = faceMatcher.findBestMatch(detection.descriptor);
@@ -108,9 +110,6 @@ router.post("/", async (req, res) => {
       }
     }
 
-    tf.engine().endScope(); // free tensors
-    scopeEnded = true;
-
     res.json({ match: isMatch });
   } catch (err) {
     console.error("Face verification error:", err);
@@ -119,9 +118,7 @@ router.post("/", async (req, res) => {
       message: err.message || "Internal server error during face verification.",
     });
   } finally {
-    if (!scopeEnded) {
-      tf.engine().endScope(); // always free tensors
-    }
+    tf.engine().endScope(); // ✅ always free memory
   }
 });
 
