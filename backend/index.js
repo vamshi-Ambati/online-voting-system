@@ -1,4 +1,3 @@
-// server.js
 const express = require("express");
 const cors = require("cors");
 const path = require("path");
@@ -6,38 +5,42 @@ const { connectMongoDB } = require("./connection");
 
 const app = express();
 
-// Allowed origins for CORS
+/* -------------------- CORS CONFIG -------------------- */
 const allowedOrigins = process.env.CORS_ORIGIN
-  ? process.env.CORS_ORIGIN.split(",")
-  : ["*"];
+  ? process.env.CORS_ORIGIN.split(",").map((o) => o.trim())
+  : ["http://localhost:3000"]; // default for local dev
 
 app.use(
   cors({
     origin: function (origin, callback) {
+      // Allow requests with no origin (like mobile apps or curl)
       if (!origin) return callback(null, true);
+
       if (allowedOrigins.includes("*") || allowedOrigins.includes(origin)) {
-        callback(null, true);
+        return callback(null, true);
       } else {
-        callback(new Error("Not allowed by CORS"));
+        console.warn(`❌ CORS blocked request from origin: ${origin}`);
+        return callback(new Error("Not allowed by CORS"));
       }
     },
     methods: ["GET", "POST", "PUT", "DELETE"],
     allowedHeaders: ["Content-Type", "Authorization"],
-    credentials: true,
+    credentials: true, // allow cookies/auth headers
   })
 );
 
-// Body parsing with limits
+/* -------------------- BODY PARSING -------------------- */
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true, limit: "10mb" }));
 
-// Serve uploads (optional, but you might not need this if you always delete files)
+/* -------------------- STATIC FILES -------------------- */
+// Only serve uploaded files if needed
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
-// MongoDB
+/* -------------------- DATABASE -------------------- */
 connectMongoDB();
 
-// Routes
+/* -------------------- ROUTES -------------------- */
 const voterRouter = require("./routes/voter");
 const candidateRouter = require("./routes/candidate");
 const voteRouter = require("./routes/vote");
@@ -52,7 +55,7 @@ app.use("/api/results", resultRouter);
 app.use("/api/elections", electionsRouter);
 app.use("/api/verify-face", faceVerifyRouter);
 
-// Health check
+/* -------------------- HEALTH CHECK -------------------- */
 app.get("/health", (req, res) => {
   res.status(200).json({
     status: "healthy",
@@ -61,14 +64,14 @@ app.get("/health", (req, res) => {
   });
 });
 
-// Root
+/* -------------------- ROOT -------------------- */
 app.get("/", (req, res) => {
   res.send("Election API Server - Hello, World!");
 });
 
-// Error handling
+/* -------------------- ERROR HANDLING -------------------- */
 app.use((err, req, res, next) => {
-  console.error(err.stack);
+  console.error("🔥 Error:", err.stack);
   res.status(err.statusCode || 500).json({
     error: err.message || "Something went wrong!",
   });
@@ -76,13 +79,14 @@ app.use((err, req, res, next) => {
 
 app.use((req, res) => res.status(404).json({ error: "Endpoint not found" }));
 
-// Start server
+/* -------------------- START SERVER -------------------- */
 const PORT = process.env.PORT || 3000;
 const server = app.listen(PORT, () => {
   console.log(`✅ Server started at http://localhost:${PORT}`);
+  console.log(`🌍 Allowed Origins: ${allowedOrigins.join(", ")}`);
 });
 
-// Graceful shutdown
+/* -------------------- GRACEFUL SHUTDOWN -------------------- */
 process.on("SIGTERM", () => {
   console.log("SIGTERM received. Shutting down...");
   server.close(() => process.exit(0));
