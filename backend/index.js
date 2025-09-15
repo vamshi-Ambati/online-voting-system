@@ -9,12 +9,12 @@ const app = express();
 /* -------------------- CORS CONFIG -------------------- */
 const allowedOrigins = process.env.CORS_ORIGIN
   ? process.env.CORS_ORIGIN.split(",").map((o) => o.trim())
-  : ["http://localhost:5173"]; // default frontend port
+  : ["http://localhost:3000", "http://localhost:5173"]; // add your frontend port here
 
 app.use(
   cors({
     origin: function (origin, callback) {
-      if (!origin) return callback(null, true); // mobile / curl requests
+      if (!origin) return callback(null, true); // allow mobile/curl or same-origin requests
 
       if (allowedOrigins.includes("*") || allowedOrigins.includes(origin)) {
         return callback(null, true);
@@ -23,9 +23,10 @@ app.use(
         return callback(new Error("Not allowed by CORS"));
       }
     },
-    methods: ["GET", "POST", "PUT", "DELETE"],
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
     credentials: true,
+    optionsSuccessStatus: 200, // some legacy browsers (IE11, smart TVs) choke on 204
   })
 );
 
