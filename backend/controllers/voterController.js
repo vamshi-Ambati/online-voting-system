@@ -13,11 +13,16 @@ const axios = require("axios");
 // Face descriptor logic
 const faceapi = require("@vladmandic/face-api");
 const canvas = require("canvas");
-const { log } = require("console");
 const { Canvas, Image, ImageData } = canvas;
 faceapi.env.monkeyPatch({ Canvas, Image, ImageData });
 
 dotenv.config();
+
+// Ensure uploads/voters directory exists
+const voterUploadDir = path.join(__dirname, "../uploads/voters");
+if (!fs.existsSync(voterUploadDir)) {
+  fs.mkdirSync(voterUploadDir, { recursive: true });
+}
 
 // Mail transporter
 const transporter = nodemailer.createTransport({
@@ -189,7 +194,7 @@ const handleRegister = async (req, res) => {
     mobile,
   } = req.body;
 
-  const photoPath = req.file ? req.file.path : null;
+  const uploadedFile = req.file ? req.file.path : null;
 
   try {
     if (
@@ -203,46 +208,54 @@ const handleRegister = async (req, res) => {
       !dob ||
       !aadhaar ||
       !mobile ||
-      !photoPath
+      !uploadedFile
     ) {
-      if (photoPath) fs.unlinkSync(photoPath);
+      if (uploadedFile) fs.unlinkSync(uploadedFile);
       return res.status(400).json({
         success: false,
         message: "All required fields must be provided",
       });
     }
 
+    // Move uploaded file into uploads/voters/
+    const fileName = Date.now() + "-" + path.basename(uploadedFile);
+    const finalPath = path.join(voterUploadDir, fileName);
+    fs.renameSync(uploadedFile, finalPath);
+
+    // Store relative path in DB
+    const photoPath = path.relative(path.join(__dirname, ".."), finalPath);
+
     // Duplicate checks
     if (await Voter.findOne({ email })) {
-      if (photoPath) fs.unlinkSync(photoPath);
+      fs.unlinkSync(finalPath);
       return res
         .status(400)
         .json({ success: false, message: "Email already registered" });
     }
 
     if (await Voter.findOne({ mobile })) {
-      if (photoPath) fs.unlinkSync(photoPath);
+      fs.unlinkSync(finalPath);
       return res
         .status(400)
         .json({ success: false, message: "Mobile number already registered" });
     }
 
     if (await Voter.findOne({ voterId })) {
-      if (photoPath) fs.unlinkSync(photoPath);
+      fs.unlinkSync(finalPath);
       return res
         .status(400)
         .json({ success: false, message: "Voter ID already registered" });
     }
 
     if (await Voter.findOne({ aadhaar })) {
-      if (photoPath) fs.unlinkSync(photoPath);
+      fs.unlinkSync(finalPath);
       return res
         .status(400)
         .json({ success: false, message: "Aadhaar already registered" });
     }
 
     // Face detection
-    const photoBuffer = fs.readFileSync(photoPath);
+    const photoBuffer = fs.readFileSync(finalPath);
     const img = await canvas.loadImage(photoBuffer);
 
     const detection = await faceapi
@@ -251,7 +264,7 @@ const handleRegister = async (req, res) => {
       .withFaceDescriptor();
 
     if (!detection) {
-      fs.unlinkSync(photoPath);
+      fs.unlinkSync(finalPath);
       return res
         .status(400)
         .json({ success: false, message: "No face detected in the photo" });
@@ -271,10 +284,9 @@ const handleRegister = async (req, res) => {
       dob,
       aadhaar,
       mobile,
-      photo: photoPath,
+      photo: photoPath, // relative path like uploads/voters/xxxx.jpg
       faceDescriptor,
     });
-    // console.log("New user registered:", newUser);
 
     res.status(201).json({
       success: true,
@@ -283,7 +295,8 @@ const handleRegister = async (req, res) => {
     });
   } catch (error) {
     console.error("Registration error:", error);
-    if (photoPath) fs.unlinkSync(photoPath);
+    if (uploadedFile && fs.existsSync(uploadedFile))
+      fs.unlinkSync(uploadedFile);
     res.status(500).json({ success: false, message: "Registration failed" });
   }
 };
@@ -302,22 +315,18 @@ const handleLogin = async (req, res) => {
     let user;
     if (role === "admin") {
       if (!email) {
-        return res
-          .status(400)
-          .json({
-            success: false,
-            message: "Email is required for admin login",
-          });
+        return res.status(400).json({
+          success: false,
+          message: "Email is required for admin login",
+        });
       }
       user = await Voter.findOne({ email, role: "admin" });
     } else {
       if (!voterId) {
-        return res
-          .status(400)
-          .json({
-            success: false,
-            message: "Voter ID is required for voter login",
-          });
+        return res.status(400).json({
+          success: false,
+          message: "Voter ID is required for voter login",
+        });
       }
       user = await Voter.findOne({ voterId, role: "voter" });
     }

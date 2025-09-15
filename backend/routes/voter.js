@@ -1,6 +1,9 @@
+// routes/voter.js
 const express = require("express");
 const router = express.Router();
 const multer = require("multer");
+const fs = require("fs");
+const path = require("path");
 const {
   sendEmailVerification,
   verifyEmail,
@@ -10,41 +13,44 @@ const {
   verifyMobileOtp,
 } = require("../controllers/voterController");
 
+// Ensure upload directory exists
+const uploadDir = path.join(__dirname, "..", "uploads", "voters");
+if (!fs.existsSync(uploadDir)) {
+  fs.mkdirSync(uploadDir, { recursive: true });
+}
+
 // Configure Multer for file uploads
 const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, "uploads/"); // Files will be saved in the 'uploads' directory
-  },
+  destination: (req, file, cb) => cb(null, uploadDir),
   filename: (req, file, cb) => {
-    cb(null, Date.now() + "-" + file.originalname); // Unique filename
+    cb(null, Date.now() + "-" + file.originalname);
   },
 });
 
-const upload = multer({ storage: storage });
+const upload = multer({
+  storage,
+  limits: { fileSize: 2 * 1024 * 1024 }, // 2 MB max
+});
 
-// @route   POST /voter/register
-// @desc    Register a new voter with photo upload
-// @access  Public
-router.post("/register", upload.single("photo"), handleRegister);
+// ✅ Register voter with photo upload (do not delete after success!)
+router.post("/register", upload.single("photo"), async (req, res, next) => {
+  try {
+    await handleRegister(req, res);
+    // No file deletion here — controller handles cleanup on errors
+  } catch (err) {
+    next(err);
+  }
+});
 
-// @route   POST /voter/login
-// @desc    Login voter
-// @access  Public
+// Login
 router.post("/login", handleLogin);
 
-// @route   POST /voter/send-email-verification
-// @desc    Send an OTP to the user's email
-// @access  Public
+// Email verification
 router.post("/send-email-verification", sendEmailVerification);
-
-// @route   POST /voter/verify-email
-// @desc    Verify the OTP from the user's email
-// @access  Public
 router.post("/verify-email", verifyEmail);
 
+// Mobile OTP
 router.post("/send-mobile-otp", sendMobileOtp);
 router.post("/verify-mobile-otp", verifyMobileOtp);
-
-
 
 module.exports = router;

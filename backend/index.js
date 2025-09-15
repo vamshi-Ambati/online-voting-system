@@ -1,22 +1,20 @@
-// server.js or app.js (your main express server file)
+// server.js
 const express = require("express");
 const cors = require("cors");
 const path = require("path");
+const { connectMongoDB } = require("./connection");
 
 const app = express();
 
-// Allowed origins for CORS: comma-separated list in environment variable, or fallback to *
+// Allowed origins for CORS
 const allowedOrigins = process.env.CORS_ORIGIN
   ? process.env.CORS_ORIGIN.split(",")
   : ["*"];
 
-// Configure CORS middleware with dynamic origin checking
 app.use(
   cors({
     origin: function (origin, callback) {
-      // Allow requests with no origin (like mobile apps or curl requests)
       if (!origin) return callback(null, true);
-
       if (allowedOrigins.includes("*") || allowedOrigins.includes(origin)) {
         callback(null, true);
       } else {
@@ -25,22 +23,21 @@ app.use(
     },
     methods: ["GET", "POST", "PUT", "DELETE"],
     allowedHeaders: ["Content-Type", "Authorization"],
-    credentials: true, // if you want to allow cookies/auth headers
+    credentials: true,
   })
 );
 
-// Body parsing with increased limits for image uploads
+// Body parsing with limits
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true, limit: "10mb" }));
 
-// Serve uploads folder statically
+// Serve uploads (optional, but you might not need this if you always delete files)
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
-// MongoDB connection
-const { connectMongoDB } = require("./connection");
+// MongoDB
 connectMongoDB();
 
-// Register your routes
+// Routes
 const voterRouter = require("./routes/voter");
 const candidateRouter = require("./routes/candidate");
 const voteRouter = require("./routes/vote");
@@ -69,29 +66,24 @@ app.get("/", (req, res) => {
   res.send("Election API Server - Hello, World!");
 });
 
-// Error handling middleware
+// Error handling
 app.use((err, req, res, next) => {
   console.error(err.stack);
   res.status(err.statusCode || 500).json({
     error: err.message || "Something went wrong!",
   });
 });
-// Handle 404
-app.use((req, res) => {
-  res.status(404).json({ error: "Endpoint not found" });
-});
+
+app.use((req, res) => res.status(404).json({ error: "Endpoint not found" }));
 
 // Start server
 const PORT = process.env.PORT || 3000;
 const server = app.listen(PORT, () => {
-  console.log(`✅ Server started successfully! at http://localhost:${PORT}`);
+  console.log(`✅ Server started at http://localhost:${PORT}`);
 });
 
 // Graceful shutdown
 process.on("SIGTERM", () => {
-  console.log("SIGTERM received. Shutting down gracefully...");
-  server.close(() => {
-    console.log("Server closed");
-    process.exit(0);
-  });
+  console.log("SIGTERM received. Shutting down...");
+  server.close(() => process.exit(0));
 });
