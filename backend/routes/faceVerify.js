@@ -22,26 +22,6 @@ async function ensureModels() {
   }
 }
 
-/* -------------------- HELPERS -------------------- */
-async function createLabeledDescriptorsFromBinary(photoBinary, label) {
-  const imgBuffer = photoBinary.data; // Binary data from MongoDB
-  const img = await canvas.loadImage(imgBuffer);
-
-  const detections = await faceapi
-    .detectAllFaces(img)
-    .withFaceLandmarks()
-    .withFaceDescriptors();
-
-  if (!detections.length) {
-    throw new Error("No face detected in registered photo.");
-  }
-
-  return new faceapi.LabeledFaceDescriptors(
-    label,
-    detections.map((det) => det.descriptor)
-  );
-}
-
 /* -------------------- ROUTE: VERIFY FACE -------------------- */
 router.post("/", async (req, res) => {
   await ensureModels();
@@ -54,27 +34,28 @@ router.post("/", async (req, res) => {
   }
 
   try {
-    tf.engine().startScope(); // start memory scope
+    tf.engine().startScope();
 
-    const voter = await Voter.findById(voterId);
-    if (!voter || !voter.photo) {
+    // 1. Find voter with precomputed face descriptor
+    const voter = await Voter.findById(voterId).select("faceDescriptors");
+    if (!voter || !voter.faceDescriptors) {
       return res
         .status(404)
-        .json({ match: false, message: "Voter or photo not found" });
+        .json({ match: false, message: "Voter or face descriptors not found" });
     }
 
-    // Create descriptors for stored image from binary
-    const labeledDescriptors = await createLabeledDescriptorsFromBinary(
-      voter.photo,
-      voterId.toString()
+    // Reconstruct LabeledFaceDescriptors from DB
+    const labeledDescriptors = new faceapi.LabeledFaceDescriptors(
+      voterId.toString(),
+      [Float32Array.from(voter.faceDescriptors)]
     );
-
     const faceMatcher = new faceapi.FaceMatcher([labeledDescriptors], 0.6);
 
-    // Decode live image (base64 from frontend)
+    // 2. Decode live image (base64 from frontend)
     const base64Data = image.split(",")[1];
     const liveImg = await canvas.loadImage(Buffer.from(base64Data, "base64"));
 
+    // 3. Detect & compute live descriptors
     const liveDetections = await faceapi
       .detectAllFaces(liveImg)
       .withFaceLandmarks()
@@ -86,7 +67,7 @@ router.post("/", async (req, res) => {
         .json({ match: false, message: "No face detected in live image." });
     }
 
-    // Compare live image with registered descriptors
+    // 4. Compare with stored descriptor
     let isMatch = false;
     for (const detection of liveDetections) {
       const bestMatch = faceMatcher.findBestMatch(detection.descriptor);
@@ -104,7 +85,7 @@ router.post("/", async (req, res) => {
       message: err.message || "Internal server error during face verification.",
     });
   } finally {
-    tf.engine().endScope(); // always free memory
+    tf.engine().endScope(); // free tensor memory
   }
 });
 
