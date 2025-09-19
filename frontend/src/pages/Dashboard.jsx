@@ -29,36 +29,53 @@ const Dashboard = () => {
   // Show registered voters view by default
   const [activeView, setActiveView] = useState("voters");
 
-  const fetchVoters = async () => {
-    try {
-      const response = await fetch(`${apiUrl}/api/candidates/getAllVoters`);
-      if (!response.ok) throw new Error(`Failed: ${response.statusText}`);
-      const data = await response.json();
-      const votersArray = Array.isArray(data.voters) ? data.voters : [];
-      setVoters(votersArray);
-      setStats((prev) => ({ ...prev, totalVoters: votersArray.length }));
-    } catch (err) {
-      setError(err);
-    }
-  };
+ const fetchVoters = async () => {
+   try {
+     const response = await fetch(`${apiUrl}/api/candidates/getAllVoters`);
+     if (!response.ok) throw new Error(`Failed: ${response.statusText}`);
+     const data = await response.json();
+     const votersArray = Array.isArray(data.voters) ? data.voters : [];
+     setVoters(votersArray);
 
-  const fetchCandidates = async () => {
-    try {
-      const response = await fetch(`${apiUrl}/api/candidates/getCandidates`);
-      if (!response.ok) throw new Error(`Failed: ${response.statusText}`);
-      const data = await response.json();
-      const candidatesArray = Array.isArray(data.candidates)
-        ? data.candidates
-        : [];
-      setCandidates(candidatesArray);
-      setStats((prev) => ({
-        ...prev,
-        totalCandidates: candidatesArray.length,
-      }));
-    } catch (err) {
-      setError(err);
-    }
-  };
+     // Calculate votes cast
+     const votesCastCount = votersArray.filter((v) => v.hasVoted).length;
+
+     // Calculate participation rate
+     const participationRate =
+       votersArray.length > 0
+         ? ((votesCastCount / votersArray.length) * 100).toFixed(2)
+         : 0;
+
+     setStats((prev) => ({
+       ...prev,
+       totalVoters: votersArray.length,
+       votesCast: votesCastCount,
+       participationRate,
+     }));
+   } catch (err) {
+     setError(err);
+   }
+ };
+
+ const fetchCandidates = async () => {
+   try {
+     const response = await fetch(`${apiUrl}/api/candidates/getCandidates`);
+     if (!response.ok) throw new Error(`Failed: ${response.statusText}`);
+     const data = await response.json();
+     const candidatesArray = Array.isArray(data.candidates)
+       ? data.candidates
+       : [];
+     setCandidates(candidatesArray);
+
+     setStats((prev) => ({
+       ...prev,
+       totalCandidates: candidatesArray.length,
+     }));
+   } catch (err) {
+     setError(err);
+   }
+ };
+
 
   useEffect(() => {
     const fetchData = async () => {
@@ -165,7 +182,7 @@ const Dashboard = () => {
                     {voters.map((voter) => (
                       <tr key={voter._id}>
                         <td>
-                          {`${voter.firstName} ${voter.middleName} ${voter.lastName}`
+                          {`${voter.firstName} ${voter.lastName}`
                             .replace(/\s+/g, " ")
                             .trim()}
                         </td>

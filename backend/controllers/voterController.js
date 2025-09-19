@@ -18,12 +18,6 @@ faceapi.env.monkeyPatch({ Canvas, Image, ImageData });
 
 dotenv.config();
 
-// Ensure uploads/voters directory exists
-const voterUploadDir = path.join(__dirname, "../uploads/voters");
-if (!fs.existsSync(voterUploadDir)) {
-  fs.mkdirSync(voterUploadDir, { recursive: true });
-}
-
 // Mail transporter
 const transporter = nodemailer.createTransport({
   service: "gmail",
@@ -194,7 +188,12 @@ const handleRegister = async (req, res) => {
     mobile,
   } = req.body;
 
-  const uploadedFile = req.file ? req.file.path : null;
+  const uploadedFile = req.file;
+  if (!uploadedFile) {
+    return res
+      .status(400)
+      .json({ success: false, message: "Photo is required" });
+  }
 
   try {
     if (
@@ -207,72 +206,67 @@ const handleRegister = async (req, res) => {
       !gender ||
       !dob ||
       !aadhaar ||
-      !mobile ||
-      !uploadedFile
+      !mobile
     ) {
-      if (uploadedFile) fs.unlinkSync(uploadedFile);
+      fs.unlinkSync(uploadedFile.path);
       return res.status(400).json({
         success: false,
         message: "All required fields must be provided",
       });
     }
 
-    // Move uploaded file into uploads/voters/
-    const fileName = Date.now() + "-" + path.basename(uploadedFile);
-    const finalPath = path.join(voterUploadDir, fileName);
-    fs.renameSync(uploadedFile, finalPath);
+    // Read uploaded file into buffer and store as binary in MongoDB
+    const photoBuffer = fs.readFileSync(uploadedFile.path);
+    const photoData = {
+      data: photoBuffer,
+      contentType: uploadedFile.mimetype,
+    };
 
-    // Store relative path in DB
-    const photoPath = path.relative(path.join(__dirname, ".."), finalPath);
+    // Remove uploaded file from server
+    fs.unlinkSync(uploadedFile.path);
 
     // Duplicate checks
     if (await Voter.findOne({ email })) {
-      fs.unlinkSync(finalPath);
       return res
         .status(400)
         .json({ success: false, message: "Email already registered" });
     }
 
     if (await Voter.findOne({ mobile })) {
-      fs.unlinkSync(finalPath);
       return res
         .status(400)
         .json({ success: false, message: "Mobile number already registered" });
     }
 
     if (await Voter.findOne({ voterId })) {
-      fs.unlinkSync(finalPath);
       return res
         .status(400)
         .json({ success: false, message: "Voter ID already registered" });
     }
 
     if (await Voter.findOne({ aadhaar })) {
-      fs.unlinkSync(finalPath);
       return res
         .status(400)
         .json({ success: false, message: "Aadhaar already registered" });
     }
 
     // Face detection
-    const photoBuffer = fs.readFileSync(finalPath);
     const img = await canvas.loadImage(photoBuffer);
-
     const detection = await faceapi
       .detectSingleFace(img)
       .withFaceLandmarks()
       .withFaceDescriptor();
 
     if (!detection) {
-      fs.unlinkSync(finalPath);
       return res
         .status(400)
         .json({ success: false, message: "No face detected in the photo" });
     }
 
-    const faceDescriptor = Array.from(detection.descriptor);
+    const faceDescriptors = Array.from(detection.descriptor);
     const hashedPassword = await bcrypt.hash(password, 10);
 
+    // ✅ hasVoted is added here with default false
     const newUser = await Voter.create({
       firstName,
       lastName,
@@ -284,8 +278,9 @@ const handleRegister = async (req, res) => {
       dob,
       aadhaar,
       mobile,
-      photo: photoPath, // relative path like uploads/voters/xxxx.jpg
-      faceDescriptor,
+      photo: photoData,
+      faceDescriptors,
+      hasVoted: false, // 👈 added here
     });
 
     res.status(201).json({
@@ -295,11 +290,12 @@ const handleRegister = async (req, res) => {
     });
   } catch (error) {
     console.error("Registration error:", error);
-    if (uploadedFile && fs.existsSync(uploadedFile))
-      fs.unlinkSync(uploadedFile);
+    if (uploadedFile && fs.existsSync(uploadedFile.path))
+      fs.unlinkSync(uploadedFile.path);
     res.status(500).json({ success: false, message: "Registration failed" });
   }
 };
+
 
 /* -------------------- LOGIN -------------------- */
 const handleLogin = async (req, res) => {
@@ -378,6 +374,19 @@ const handleLogin = async (req, res) => {
   }
 };
 
+/* -------------------- GET VOTER PHOTO -------------------- */
+// const getVoterPhoto = async (req, res) => {
+//   try {
+//     const voter = await Voter.findById(req.params.id);
+//     if (!voter || !voter.photo) return res.sendStatus(404);
+
+//     res.contentType(voter.photo.contentType);
+//     res.send(voter.photo.data);
+//   } catch (err) {
+//     res.status(500).json({ message: "Failed to fetch photo" });
+//   }
+// };
+
 module.exports = {
   sendEmailVerification,
   verifyEmail,
@@ -385,4 +394,5 @@ module.exports = {
   verifyMobileOtp,
   handleRegister,
   handleLogin,
+  // getVoterPhoto,
 };

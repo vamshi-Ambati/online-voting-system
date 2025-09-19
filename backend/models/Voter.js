@@ -11,8 +11,9 @@ const voterSchema = new mongoose.Schema({
   dob: { type: Date, required: true },
   aadhaar: { type: String, required: true, unique: true }, // ✅ Added Aadhaar
   mobile: { type: String, required: true, unique: true },
-  photo: { type: String, required: true },
-  faceDescriptor: { type: [Number], required: true },
-});
+  photo: { data: Buffer, contentType: String },
+  faceDescriptors: { type: [Number], required: true },
+  hasVoted: { type: Boolean, default: false },
+}, { timestamps: true }); // ✅ this adds createdAt & updatedAt automatically
 
 module.exports = mongoose.model("Voter", voterSchema);

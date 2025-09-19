@@ -22,7 +22,8 @@ import {
 } from "react-icons/fi";
 import { FaChevronDown, FaChevronUp } from "react-icons/fa";
 import apiUrl from "../apiUrl";
-import "../styles/results.css"
+import "../styles/results.css";
+
 // Register chart elements
 Chart.register(
   ArcElement,
@@ -43,7 +44,6 @@ const electionInfo = {
   status: "CERTIFIED",
   totalVoters: 107000,
   turnout: 78.5,
-  // precincts: "All 45 precincts reporting",
   lastUpdated: "2025-11-06 08:30 AM EST",
   electionType: "Educational",
   region: "Chennai, India",
@@ -52,7 +52,6 @@ const electionInfo = {
 };
 
 const chartModes = {
-  BAR: "bar",
   PIE: "pie",
   HORIZONTAL: "horizontal",
   LINE: "line",
@@ -71,6 +70,16 @@ const getPartyImgUrl = (partyImg) => {
   return `${apiUrl}${partyImg}`;
 };
 
+// Utility to generate a unique random color
+const generateRandomColor = () => {
+  const letters = "0123456789ABCDEF";
+  let color = "#";
+  for (let i = 0; i < 6; i++) {
+    color += letters[Math.floor(Math.random() * 16)];
+  }
+  return color;
+};
+
 const ElectionResults = () => {
   const [results, setResults] = useState([]);
   const [historicalData, setHistoricalData] = useState([]);
@@ -84,8 +93,12 @@ const ElectionResults = () => {
     regional: true,
   });
   const [error, setError] = useState("");
-  const [expandedView, setExpandedView] = useState(false);
   const [selectedCandidate, setSelectedCandidate] = useState(null);
+  const [totalVoters, setTotalVoters] = useState(0);
+  const [turnout, setTurnout] = useState(0);
+
+  // State to store unique colors for each party
+  const [partyColors, setPartyColors] = useState({});
 
   // Fetch results from backend
   useEffect(() => {
@@ -94,68 +107,66 @@ const ElectionResults = () => {
         setLoading((prev) => ({ ...prev, results: true }));
         setError("");
 
-        // Fetch main results
-        const resultsResponse = await fetch(`${apiUrl}/api/results`);
-        if (!resultsResponse.ok) throw new Error("Failed to fetch results");
-        let resultsData = await resultsResponse.json();
-        resultsData = resultsData.sort((a, b) => b.votes - a.votes);
-        setResults(resultsData);
+        const res = await fetch(`${apiUrl}/api/results`);
+        if (!res.ok) throw new Error("Failed to fetch results");
 
-        // Fetch historical data
-        const historicalResponse = await fetch(
-          `${apiUrl}/api/results/historical`
-        );
-        if (historicalResponse.ok) {
-          const historicalData = await historicalResponse.json();
-          setHistoricalData(historicalData);
+        const data = await res.json();
+
+        if (!Array.isArray(data.results)) {
+          throw new Error("Invalid results format from backend");
         }
 
-        // Fetch regional data
-        const regionalResponse = await fetch(`${apiUrl}/api/results/regional`);
-        if (regionalResponse.ok) {
-          const regionalData = await regionalResponse.json();
-          setRegionalData(regionalData);
-        }
-      } catch (err) {
-        setError(err.message || "Unknown error");
-      } finally {
-        setLoading((prev) => ({
-          ...prev,
-          results: false,
-          historical: false,
-          regional: false,
+        const sortedResults = data.results.sort((a, b) => b.votes - a.votes);
+        const winningCandidateId = sortedResults[0]?.id;
+
+        const updatedResults = sortedResults.map((candidate) => ({
+          ...candidate,
+          status:
+            candidate.votes === 0
+              ? "Conceded"
+              : candidate.id === winningCandidateId
+              ? "Winner"
+              : "Trailing",
         }));
+
+        setResults(updatedResults);
+        setTotalVoters(data.totalVoters);
+        setTurnout(data.turnout);
+      } catch (err) {
+        setError(err.message);
+      } finally {
+        setLoading((prev) => ({ ...prev, results: false }));
       }
     };
+
     fetchData();
   }, []);
+
+  // Effect to assign a unique color to each party
+  useEffect(() => {
+    const newPartyColors = { ...partyColors };
+    results.forEach((result) => {
+      if (!newPartyColors[result.party]) {
+        newPartyColors[result.party] = generateRandomColor();
+      }
+    });
+    setPartyColors(newPartyColors);
+  }, [results]);
 
   const winner = results.length > 0 ? results[0] : null;
   const totalVotes = results.reduce((sum, r) => sum + (r.votes || 0), 0);
   const maxVotes =
     results.length > 0 ? Math.max(...results.map((r) => r.votes || 0)) : 0;
 
-  // Prepare data for charts
-  const chartLabels = results.map((r) => r.candidate);
+  // Prepare data for charts using the assigned party colors
+  const chartLabels = results.map((r) => r.party);
   const chartData = results.map((r) => r.votes);
-  const chartColors = results.map((r) => r.color);
+  const chartColors = results.map((r) => partyColors[r.party]);
 
   const pieData = {
     labels: chartLabels,
     datasets: [
       {
-        data: chartData,
-        backgroundColor: chartColors,
-        borderWidth: 1,
-      },
-    ],
-  };
-
-  const barData = {
-    labels: chartLabels,
-    datasets: [
-      {
-        label: "Votes",
         data: chartData,
         backgroundColor: chartColors,
         borderWidth: 1,
@@ -172,8 +183,8 @@ const ElectionResults = () => {
       data: historicalData.map(
         (h) => h.candidates.find((c) => c.id === candidate.id)?.votes || 0
       ),
-      borderColor: candidate.color,
-      backgroundColor: candidate.color + "40",
+      borderColor: partyColors[candidate.party],
+      backgroundColor: partyColors[candidate.party] + "40",
       tension: 0.1,
       fill: true,
     })),
@@ -186,23 +197,10 @@ const ElectionResults = () => {
       data: regionalData.map(
         (r) => r.candidates.find((c) => c.id === candidate.id)?.votes || 0
       ),
-      backgroundColor: candidate.color + "80",
-      borderColor: candidate.color,
+      backgroundColor: partyColors[candidate.party] + "80",
+      borderColor: partyColors[candidate.party],
       borderWidth: 1,
     })),
-  };
-
-  const barOptions = {
-    indexAxis: chartMode === chartModes.HORIZONTAL ? "y" : "x",
-    responsive: true,
-    plugins: {
-      legend: { display: chartMode !== chartModes.HORIZONTAL },
-      tooltip: { enabled: true },
-    },
-    scales: {
-      x: { beginAtZero: true, ticks: { precision: 0 } },
-      y: { beginAtZero: true, ticks: { precision: 0 } },
-    },
   };
 
   const lineOptions = {
@@ -306,13 +304,8 @@ const ElectionResults = () => {
         url: window.location.href,
       });
     } catch (err) {
-      // Fallback for browsers that don't support Web Share API
       alert("Share functionality is not supported in your browser");
     }
-  };
-
-  const toggleExpandedView = () => {
-    setExpandedView(!expandedView);
   };
 
   const viewCandidateDetails = (candidate) => {
@@ -361,14 +354,14 @@ const ElectionResults = () => {
               <div className="stat-item">
                 <div className="stat-content">
                   <span className="stat-label">Voter Turnout</span>
-                  <span className="stat-value">{electionInfo.turnout}%</span>
+                  <span className="stat-value">{turnout}%</span>
                 </div>
               </div>
               <div className="stat-item">
                 <div className="stat-content">
                   <span className="stat-label">Registered Voters</span>
                   <span className="stat-value">
-                    {electionInfo.totalVoters.toLocaleString()}
+                    {totalVoters.toLocaleString()}
                   </span>
                 </div>
               </div>
@@ -383,7 +376,7 @@ const ElectionResults = () => {
               </div>
               <div className="winner-content">
                 <img
-                  src={getPartyImgUrl(winner.partyImg)}
+                  src={winner.partyImg}
                   alt={winner.party}
                   className="party-logo"
                   onError={(e) => {
@@ -430,26 +423,12 @@ const ElectionResults = () => {
             <button className="action-btn" onClick={shareResults}>
               <FiShare2 /> Share
             </button>
+            <button className="action-btn">Publish</button>
           </div>
         </div>
       </header>
 
-      {/* Main Content Toggle */}
-      <div className="content-toggle">
-        <button onClick={toggleExpandedView} className="toggle-btn">
-          {expandedView ? (
-            <>
-              <FaChevronUp /> Show Simplified View
-            </>
-          ) : (
-            <>
-              <FaChevronDown /> Show Detailed Analysis
-            </>
-          )}
-        </button>
-      </div>
-
-      {/* Results Section */}
+      {/* Main Content (no toggle) */}
       <main className="election-results">
         {loading.results ? (
           <div className="loading-state">
@@ -480,14 +459,6 @@ const ElectionResults = () => {
                 </button>
                 <button
                   className={`chart-mode-btn${
-                    chartMode === chartModes.BAR ? " active" : ""
-                  }`}
-                  onClick={() => setChartMode(chartModes.BAR)}
-                >
-                  <FiBarChart2 /> Vertical
-                </button>
-                <button
-                  className={`chart-mode-btn${
                     chartMode === chartModes.PIE ? " active" : ""
                   }`}
                   onClick={() => setChartMode(chartModes.PIE)}
@@ -514,10 +485,6 @@ const ElectionResults = () => {
                   <div className="pie-chart-wrapper">
                     <Pie data={pieData} />
                   </div>
-                ) : chartMode === chartModes.BAR ? (
-                  <div className="bar-chart-wrapper">
-                    <Bar data={barData} options={barOptions} />
-                  </div>
                 ) : chartMode === chartModes.LINE ? (
                   <div className="line-chart-wrapper">
                     <Line data={lineData} options={lineOptions} />
@@ -528,6 +495,7 @@ const ElectionResults = () => {
                       const barWidth =
                         maxVotes > 0 ? (result.votes / maxVotes) * 100 : 0;
                       const isHovered = hoveredCandidate === result.id;
+                      // const partyColor = partyColors[result.party];
                       return (
                         <div
                           className={`chart-row ${isHovered ? "hovered" : ""}`}
@@ -538,14 +506,16 @@ const ElectionResults = () => {
                         >
                           <div className="row-rank">#{index + 1}</div>
                           <div className="row-candidate">
-                            <img
-                              src={getPartyImgUrl(result.partyImg)}
+                            {/* <img
+                              src={result.partyImg}
                               alt={result.party}
+                              height={32}
+                              width={32}
                               className="party-logo"
                               onError={(e) => {
                                 e.target.style.display = "none";
                               }}
-                            />
+                            /> */}
                             <div className="candidate-info">
                               <span className="candidate-name">
                                 {result.candidate}
@@ -560,7 +530,8 @@ const ElectionResults = () => {
                               className="chart-bar"
                               style={{
                                 width: `${barWidth}%`,
-                                backgroundColor: result.color,
+                                // backgroundColor: partyColor,
+                                backgroundColor: "#1e88e5",
                               }}
                             >
                               <div className="bar-content">
@@ -593,227 +564,9 @@ const ElectionResults = () => {
                 )}
               </div>
             </div>
-
-            {/* Expanded Analysis View */}
-            {expandedView && (
-              <div className="analysis-section">
-                <div className="analysis-tabs">
-                  <div className="tab-header">
-                    <h3>Detailed Analysis</h3>
-                  </div>
-
-                  {/* Regional Breakdown */}
-                  {regionalData.length > 0 && (
-                    <div className="analysis-tab">
-                      <h4>Regional Breakdown</h4>
-                      <div className="regional-chart">
-                        <Bar data={regionalBarData} options={regionalOptions} />
-                      </div>
-                      <div className="regional-table">
-                        <table>
-                          <thead>
-                            <tr>
-                              <th>Region</th>
-                              {results.map((candidate) => (
-                                <th key={candidate.id}>
-                                  {candidate.candidate}
-                                </th>
-                              ))}
-                              <th>Total</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {regionalData.map((region) => (
-                              <tr key={region.region}>
-                                <td>{region.region}</td>
-                                {results.map((candidate) => (
-                                  <td key={candidate.id}>
-                                    {region.candidates
-                                      .find((c) => c.id === candidate.id)
-                                      ?.votes.toLocaleString() || "0"}
-                                  </td>
-                                ))}
-                                <td>{region.totalVotes.toLocaleString()}</td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Historical Trends */}
-                  {historicalData.length > 0 && (
-                    <div className="analysis-tab">
-                      <h4>Vote Progression</h4>
-                      <div className="time-period-toggle">
-                        <button
-                          className={`time-period-btn${
-                            timePeriod === timePeriods.HOURLY ? " active" : ""
-                          }`}
-                          onClick={() => setTimePeriod(timePeriods.HOURLY)}
-                        >
-                          Hourly
-                        </button>
-                        <button
-                          className={`time-period-btn${
-                            timePeriod === timePeriods.DAILY ? " active" : ""
-                          }`}
-                          onClick={() => setTimePeriod(timePeriods.DAILY)}
-                        >
-                          Daily
-                        </button>
-                      </div>
-                      <div className="trend-chart">
-                        <Line data={lineData} options={lineOptions} />
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Demographic Breakdown (placeholder) */}
-                  <div className="analysis-tab">
-                    <h4>Demographic Analysis</h4>
-                    <div className="demographic-placeholder">
-                      <p>
-                        Detailed demographic breakdown will be available after
-                        full data processing.
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
           </>
         )}
       </main>
-
-      {/* Footer */}
-      <footer className="election-footer">
-        <div className="footer-content">
-          <div className="footer-info">
-            <p className="last-updated">
-              Last updated: {electionInfo.lastUpdated}
-            </p>
-            <p className="disclaimer">
-              Results are unofficial until certified by the Election Commission.
-              Contact {electionInfo.electionOfficer} at{" "}
-              {electionInfo.contactEmail} for questions.
-            </p>
-          </div>
-          <div className="footer-legend">
-            <h4>Party Colors</h4>
-            <div className="legend-items">
-              {results.map((result) => (
-                <div className="legend-item" key={result.id}>
-                  <span
-                    className="legend-color"
-                    style={{ backgroundColor: result.color }}
-                  ></span>
-                  <span className="legend-label">{result.party}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      </footer>
-
-      {/* Candidate Details Modal */}
-      {selectedCandidate && (
-        <div className="candidate-modal">
-          <div className="modal-content">
-            <button className="close-modal" onClick={closeCandidateDetails}>
-              &times;
-            </button>
-            <div className="modal-header">
-              <img
-                src={getPartyImgUrl(selectedCandidate.partyImg)}
-                alt={selectedCandidate.party}
-                className="modal-party-logo"
-                onError={(e) => {
-                  e.target.style.display = "none";
-                }}
-              />
-              <h3>{selectedCandidate.candidate}</h3>
-              <p className="candidate-party">{selectedCandidate.party}</p>
-            </div>
-            <div className="modal-body">
-              <div className="candidate-stats">
-                <div className="stat-box">
-                  <span className="stat-label">Total Votes</span>
-                  <span className="stat-value">
-                    {selectedCandidate.votes.toLocaleString()}
-                  </span>
-                </div>
-                <div className="stat-box">
-                  <span className="stat-label">Vote Percentage</span>
-                  <span className="stat-value">
-                    {selectedCandidate.percentage}%
-                  </span>
-                </div>
-                <div className="stat-box">
-                  <span className="stat-label">Rank</span>
-                  <span className="stat-value">
-                    #
-                    {results.findIndex((r) => r.id === selectedCandidate.id) +
-                      1}
-                  </span>
-                </div>
-                <div className="stat-box">
-                  <span className="stat-label">Status</span>
-                  <span
-                    className={`stat-value status-${selectedCandidate.status.toLowerCase()}`}
-                  >
-                    {selectedCandidate.status}
-                  </span>
-                </div>
-              </div>
-
-              {regionalData.length > 0 && (
-                <div className="regional-performance">
-                  <h4>Regional Performance</h4>
-                  <table>
-                    <thead>
-                      <tr>
-                        <th>Region</th>
-                        <th>Votes</th>
-                        <th>% of Region</th>
-                        <th>% of Total</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {regionalData.map((region) => {
-                        const candidateData = region.candidates.find(
-                          (c) => c.id === selectedCandidate.id
-                        );
-                        const regionVotes = candidateData?.votes || 0;
-                        const regionPercentage =
-                          region.totalVotes > 0
-                            ? ((regionVotes / region.totalVotes) * 100).toFixed(
-                                1
-                              )
-                            : 0;
-                        const totalPercentage = (
-                          (regionVotes / totalVotes) *
-                          100
-                        ).toFixed(1);
-
-                        return (
-                          <tr key={region.region}>
-                            <td>{region.region}</td>
-                            <td>{regionVotes.toLocaleString()}</td>
-                            <td>{regionPercentage}%</td>
-                            <td>{totalPercentage}%</td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 };

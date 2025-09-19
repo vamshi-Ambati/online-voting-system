@@ -15,7 +15,7 @@ import "react-toastify/dist/ReactToastify.css";
 import "../styles/Login.css";
 import apiUrl from "../apiUrl";
 
-export default function VotingLogin() {
+export default function Login() {
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
     credential: "",

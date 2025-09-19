@@ -1,19 +1,26 @@
+// models/Candidate.js
 const mongoose = require("mongoose");
 
-const candidateSchema = new mongoose.Schema(
+const CandidateSchema = new mongoose.Schema(
   {
-    name: { type: String, required: true },
-    party: { type: String, required: true },
-    photoUrl: { type: String, required: true },
-    partySymbolUrl: { type: String, required: true },
-    email: { type: String },
-    mobile: { type: String },
-    address: { type: String },
-    education: { type: String },
-    experience: { type: String },
-    agenda: { type: String, required: true },
+    name: String,
+    party: String,
+    email: String,
+    mobile: String,
+    address: String,
+    education: String,
+    experience: String,
+    agenda: String,
+    photo: {
+      data: Buffer,
+      contentType: String,
+    },
+    partySymbol: {
+      data: Buffer,
+      contentType: String,
+    },
   },
   { timestamps: true }
 );
 
-module.exports = mongoose.model("Candidate", candidateSchema);
+module.exports = mongoose.model("Candidate", CandidateSchema);

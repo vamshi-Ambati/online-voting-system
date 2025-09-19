@@ -29,8 +29,8 @@ const upload = multer({
 router.post(
   "/",
   upload.fields([
-    { name: "photoUrl", maxCount: 1 },
-    { name: "partySymbolUrl", maxCount: 1 },
+    { name: "photo", maxCount: 1 },
+    { name: "partySymbol", maxCount: 1 },
   ]),
   async (req, res, next) => {
     try {

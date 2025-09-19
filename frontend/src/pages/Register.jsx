@@ -228,10 +228,10 @@ export default function VotingRegister() {
       toast.error(errorMessage);
       return;
     }
-     if (!uploadedPhoto) {
-       toast.error("Please upload a photo");
-       return;
-     }
+    if (!uploadedPhoto) {
+      toast.error("Please upload a photo");
+      return;
+    }
     setIsLoading(true);
 
     const data = new FormData();
@@ -454,7 +454,7 @@ export default function VotingRegister() {
                     </div>
                   </div>
 
-                  <div
+                  {/* <div
                     className="form-field third-width"
                     style={{ display: "flex", flexDirection: "column" }}
                   >
@@ -506,7 +506,7 @@ export default function VotingRegister() {
                     >
                       {isVerifyingMobileOTP ? "Verifying..." : "Verify"}
                     </button>
-                  </div>
+                  </div> */}
                 </div>
 
                 {/* Email and Verification */}
@@ -527,7 +527,7 @@ export default function VotingRegister() {
                     </div>
                   </div>
 
-                  <div className="form-field third-width">
+                  {/* <div className="form-field third-width">
                     <label className="form-label">Email Verification*</label>
                     <input
                       type="text"
@@ -572,7 +572,7 @@ export default function VotingRegister() {
                     >
                       {isVerifyingEmail ? "Verifying..." : "Verify"}
                     </button>
-                  </div>
+                  </div> */}
                 </div>
 
                 {/* Password */}

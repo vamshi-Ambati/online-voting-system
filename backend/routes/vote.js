@@ -1,7 +1,9 @@
 const express = require("express");
 const router = express.Router();
-const castVote = require("../controllers/voteController"); // Adjust path
+const { castVote } = require("../controllers/voteController");
 
-router.post("/vote", castVote);
+// Cast a vote
+router.post("/cast-vote", castVote);
+
 
 module.exports = router;

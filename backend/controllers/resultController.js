@@ -1,64 +1,77 @@
 const Vote = require("../models/Vote");
 const Candidate = require("../models/Candidate");
+const VoterModel = require("../models/Voter");
 
+// GET /api/results
 const getElectionResults = async (req, res) => {
   try {
-    // Aggregate votes per candidate
+    // 1. Total registered voters
+    const totalVoters = await VoterModel.countDocuments();
+
+    // 2. Aggregate votes per candidate
     const voteCounts = await Vote.aggregate([
       {
         $group: {
           _id: "$candidateId",
-          votes: { $sum: 1 }
-        }
-      }
+          votes: { $sum: 1 },
+        },
+      },
     ]);
 
-    // Fetch all candidates
+    // 3. Fetch all candidates
     const candidates = await Candidate.find();
-    // console.log(candidates);
-    
 
-    // Calculate total votes
-    const totalVotes = voteCounts.reduce((sum, c) => sum + c.votes, 0);
-
-    // Map candidateId to vote count
+    // 4. Map candidateId to vote count
     const voteMap = {};
-    voteCounts.forEach(vc => {
+    voteCounts.forEach((vc) => {
       voteMap[vc._id.toString()] = vc.votes;
     });
 
-    // Prepare results array
-    const results = candidates.map(candidate => {
+    // 5. Total votes & turnout
+    const totalVotes = voteCounts.reduce((sum, c) => sum + c.votes, 0);
+    const turnout =
+      totalVoters > 0
+        ? Number(((totalVotes / totalVoters) * 100).toFixed(1))
+        : 0;
+
+    // 6. Prepare results array
+    const results = candidates.map((candidate) => {
       const votes = voteMap[candidate._id.toString()] || 0;
+
+      // Convert partySymbol binary to Base64 if exists
+      let partyImgBase64 = null;
+      if (candidate.partySymbol && candidate.partySymbol.data) {
+        partyImgBase64 = `data:${
+          candidate.partySymbol.contentType
+        };base64,${candidate.partySymbol.data.toString("base64")}`;
+      }
+
       return {
-        id: candidate._id,
+        id: candidate._id.toString(),
         candidate: candidate.candidate,
         party: candidate.party,
-        partyImg: candidate.partySymbolUrl,
-        // color: candidate.color,
+        partyImg: partyImgBase64,
         votes,
-        percentage: totalVotes > 0 ? Number(((votes / totalVotes) * 100).toFixed(1)) : 0,
-        status: candidate.status || "", // Optional: you can set status logic here
+        percentage:
+          totalVotes > 0 ? Number(((votes / totalVotes) * 100).toFixed(1)) : 0,
+        status: "ELECTED", // you can adjust according to your logic
+        color: candidate.color || "#888", // optional for chart colors
       };
     });
 
-    // Sort by votes descending
+    // 7. Sort descending by votes
     results.sort((a, b) => b.votes - a.votes);
 
-    // Optionally, set status for winner/others
-    if (results.length > 0) {
-      results[0].status = "ELECTED";
-      for (let i = 1; i < results.length; i++) {
-        if (!results[i].status || results[i].status === "ELECTED") {
-          results[i].status = "CONCEDED";
-        }
-      }
-    }
-
-    res.json(results);
+    // 8. Send response
+    res.json({
+      results,
+      totalVoters,
+      totalVotes,
+      turnout,
+    });
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: "Error generating results." });
+    console.error("Error generating election results:", err);
+    res.status(500).json({ message: "Error generating election results." });
   }
 };
 

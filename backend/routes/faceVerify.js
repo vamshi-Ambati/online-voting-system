@@ -3,10 +3,8 @@ const express = require("express");
 const router = express.Router();
 const faceapi = require("@vladmandic/face-api");
 const canvas = require("canvas");
-const path = require("path");
-const fs = require("fs");
-const Voter = require("../models/Voter");
 const tf = require("@tensorflow/tfjs-node");
+const Voter = require("../models/Voter");
 
 const { Canvas, Image, ImageData } = canvas;
 faceapi.env.monkeyPatch({ Canvas, Image, ImageData });
@@ -15,18 +13,19 @@ faceapi.env.monkeyPatch({ Canvas, Image, ImageData });
 let modelsLoaded = false;
 async function ensureModels() {
   if (!modelsLoaded) {
-    const MODEL_PATH = path.resolve(__dirname, "../face-api-models");
+    const MODEL_PATH = require("path").resolve(__dirname, "../face-api-models");
     await faceapi.nets.ssdMobilenetv1.loadFromDisk(MODEL_PATH);
     await faceapi.nets.faceRecognitionNet.loadFromDisk(MODEL_PATH);
     await faceapi.nets.faceLandmark68Net.loadFromDisk(MODEL_PATH);
     modelsLoaded = true;
-    console.log("✅ Face-api.js models loaded once.");
+    console.log("✅ Face-api.js models loaded.");
   }
 }
 
 /* -------------------- HELPERS -------------------- */
-async function createLabeledDescriptors(photoPath, label) {
-  const img = await canvas.loadImage(photoPath);
+async function createLabeledDescriptorsFromBinary(photoBinary, label) {
+  const imgBuffer = photoBinary.data; // Binary data from MongoDB
+  const img = await canvas.loadImage(imgBuffer);
 
   const detections = await faceapi
     .detectAllFaces(img)
@@ -64,22 +63,9 @@ router.post("/", async (req, res) => {
         .json({ match: false, message: "Voter or photo not found" });
     }
 
-    // Registered photo path
-    let registeredPhotoPath = path.resolve(__dirname, "../", voter.photo);
-
-    // Fallback: try "candidates" folder if not found
-    if (!fs.existsSync(registeredPhotoPath)) {
-      registeredPhotoPath = registeredPhotoPath.replace("voters", "candidates");
-      if (!fs.existsSync(registeredPhotoPath)) {
-        throw new Error(
-          `Registered photo not found at: ${registeredPhotoPath}`
-        );
-      }
-    }
-
-    // Create descriptors for stored image
-    const labeledDescriptors = await createLabeledDescriptors(
-      registeredPhotoPath,
+    // Create descriptors for stored image from binary
+    const labeledDescriptors = await createLabeledDescriptorsFromBinary(
+      voter.photo,
       voterId.toString()
     );
 
@@ -100,7 +86,7 @@ router.post("/", async (req, res) => {
         .json({ match: false, message: "No face detected in live image." });
     }
 
-    // Compare
+    // Compare live image with registered descriptors
     let isMatch = false;
     for (const detection of liveDetections) {
       const bestMatch = faceMatcher.findBestMatch(detection.descriptor);
@@ -118,7 +104,7 @@ router.post("/", async (req, res) => {
       message: err.message || "Internal server error during face verification.",
     });
   } finally {
-    tf.engine().endScope(); // ✅ always free memory
+    tf.engine().endScope(); // always free memory
   }
 });
 
