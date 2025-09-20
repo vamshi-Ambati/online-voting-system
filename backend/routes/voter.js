@@ -1,6 +1,8 @@
 const express = require("express");
 const router = express.Router();
 const multer = require("multer");
+const { CloudinaryStorage } = require("multer-storage-cloudinary");
+const cloudinary = require("cloudinary").v2;
 
 const {
   handleRegister,
@@ -9,41 +11,36 @@ const {
   verifyEmail,
   sendMobileOtp,
   verifyMobileOtp,
-  // getVoterPhoto,
+  deleteVoter,
 } = require("../controllers/voterController");
 
-// Configure Multer for temporary file uploads
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => cb(null, "tmp/"),
-  filename: (req, file, cb) => {
-    cb(null, Date.now() + "-" + file.originalname);
+// -------------------- CLOUDINARY CONFIG --------------------
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
+});
+
+// -------------------- MULTER CLOUDINARY STORAGE --------------------
+const storage = new CloudinaryStorage({
+  cloudinary,
+  params: {
+    folder: "secure-vote/voters",
+    allowed_formats: ["jpg", "jpeg", "png"],
+    transformation: [{ width: 500, height: 500, crop: "limit" }],
   },
 });
-const upload = multer({
-  storage,
-  limits: { fileSize: 2 * 1024 * 1024 }, // 2 MB
-});
 
-// Ensure tmp folder exists
-const fs = require("fs");
-if (!fs.existsSync("tmp")) fs.mkdirSync("tmp", { recursive: true });
+const upload = multer({ storage });
 
-// -------------------- ROUTES -------------------- //
-// Register voter with photo upload
+// -------------------- ROUTES --------------------
 router.post("/register", upload.single("photo"), handleRegister);
-
-// Login
 router.post("/login", handleLogin);
-
-// Email verification
 router.post("/send-email-verification", sendEmailVerification);
 router.post("/verify-email", verifyEmail);
-
-// Mobile OTP
 router.post("/send-mobile-otp", sendMobileOtp);
 router.post("/verify-mobile-otp", verifyMobileOtp);
+router.delete("/delete/:voterId", deleteVoter); // DELETE voter + Cloudinary photo
 
-// Get voter photo
-// router.get("/voter-photo/:id", getVoterPhoto);
 
 module.exports = router;

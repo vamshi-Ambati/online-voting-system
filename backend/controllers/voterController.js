@@ -1,3 +1,4 @@
+// controllers/voterController.js
 const Voter = require("../models/Voter");
 const OTP = require("../models/EmailCode");
 const mobileOTP = require("../models/MobileOTP");
@@ -6,9 +7,8 @@ const jwt = require("jsonwebtoken");
 const dotenv = require("dotenv");
 const nodemailer = require("nodemailer");
 const otpGenerator = require("otp-generator");
-const fs = require("fs");
-const path = require("path");
 const axios = require("axios");
+const cloudinary = require("cloudinary").v2;
 
 // Face descriptor logic
 const faceapi = require("@vladmandic/face-api");
@@ -18,7 +18,14 @@ faceapi.env.monkeyPatch({ Canvas, Image, ImageData });
 
 dotenv.config();
 
-// Mail transporter
+// -------------------- CLOUDINARY CONFIG --------------------
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
+});
+
+// -------------------- EMAIL TRANSPORTER --------------------
 const transporter = nodemailer.createTransport({
   service: "gmail",
   auth: {
@@ -27,12 +34,12 @@ const transporter = nodemailer.createTransport({
   },
 });
 
-// Load models once
+// -------------------- LOAD FACE MODELS --------------------
 let modelsLoaded = false;
 async function ensureModels() {
   if (!modelsLoaded) {
     console.log("Loading face-api.js models...");
-    const MODEL_PATH = path.resolve(__dirname, "../face-api-models");
+    const MODEL_PATH = require("path").resolve(__dirname, "../face-api-models");
     await faceapi.nets.ssdMobilenetv1.loadFromDisk(MODEL_PATH);
     await faceapi.nets.faceRecognitionNet.loadFromDisk(MODEL_PATH);
     await faceapi.nets.faceLandmark68Net.loadFromDisk(MODEL_PATH);
@@ -42,7 +49,7 @@ async function ensureModels() {
 }
 ensureModels();
 
-/* -------------------- MOBILE OTP -------------------- */
+// -------------------- MOBILE OTP --------------------
 const sendMobileOtp = async (req, res) => {
   const { mobile } = req.body;
   if (!mobile || !/^\d{10}$/.test(mobile))
@@ -93,10 +100,12 @@ const verifyMobileOtp = async (req, res) => {
       response.data.Details === "OTP Matched"
     ) {
       await mobileOTP.deleteOne({ _id: record._id });
-      res.status(200).json({
-        success: true,
-        message: "Mobile number verified successfully",
-      });
+      res
+        .status(200)
+        .json({
+          success: true,
+          message: "Mobile number verified successfully",
+        });
     } else {
       res.status(400).json({ message: "Invalid or expired OTP" });
     }
@@ -106,7 +115,7 @@ const verifyMobileOtp = async (req, res) => {
   }
 };
 
-/* -------------------- EMAIL VERIFICATION -------------------- */
+// -------------------- EMAIL VERIFICATION --------------------
 const sendEmailVerification = async (req, res) => {
   const { email } = req.body;
   if (!email) return res.status(400).json({ message: "Email is required" });
@@ -114,10 +123,9 @@ const sendEmailVerification = async (req, res) => {
   try {
     const existingUser = await Voter.findOne({ email });
     if (existingUser) {
-      return res.status(400).json({
-        success: false,
-        message: "Email already registered",
-      });
+      return res
+        .status(400)
+        .json({ success: false, message: "Email already registered" });
     }
 
     const otp = otpGenerator.generate(6, {
@@ -161,9 +169,8 @@ const verifyEmail = async (req, res) => {
 
   try {
     const otpRecord = await OTP.findOne({ email, otp: code });
-    if (!otpRecord) {
+    if (!otpRecord)
       return res.status(400).json({ message: "Invalid or expired code" });
-    }
 
     await OTP.deleteOne({ _id: otpRecord._id });
     res.status(200).json({ message: "Email verified successfully" });
@@ -173,29 +180,28 @@ const verifyEmail = async (req, res) => {
   }
 };
 
-/* -------------------- REGISTRATION -------------------- */
+// -------------------- REGISTRATION --------------------
 const handleRegister = async (req, res) => {
-  const {
-    firstName,
-    lastName,
-    voterId,
-    email,
-    password,
-    role,
-    gender,
-    dob,
-    aadhaar,
-    mobile,
-  } = req.body;
-
-  const uploadedFile = req.file;
-  if (!uploadedFile) {
-    return res
-      .status(400)
-      .json({ success: false, message: "Photo is required" });
-  }
-
   try {
+    const {
+      firstName,
+      lastName,
+      voterId,
+      email,
+      password,
+      role,
+      gender,
+      dob,
+      aadhaar,
+      mobile,
+    } = req.body;
+    const uploadedFile = req.file;
+
+    if (!uploadedFile)
+      return res
+        .status(400)
+        .json({ success: false, message: "Photo is required" });
+
     if (
       !firstName ||
       !lastName ||
@@ -208,65 +214,30 @@ const handleRegister = async (req, res) => {
       !aadhaar ||
       !mobile
     ) {
-      fs.unlinkSync(uploadedFile.path);
-      return res.status(400).json({
-        success: false,
-        message: "All required fields must be provided",
-      });
-    }
-
-    // Read uploaded file into buffer and store as binary in MongoDB
-    const photoBuffer = fs.readFileSync(uploadedFile.path);
-    const photoData = {
-      data: photoBuffer,
-      contentType: uploadedFile.mimetype,
-    };
-
-    // Remove uploaded file from server
-    fs.unlinkSync(uploadedFile.path);
-
-    // Duplicate checks
-    if (await Voter.findOne({ email })) {
       return res
         .status(400)
-        .json({ success: false, message: "Email already registered" });
+        .json({
+          success: false,
+          message: "All required fields must be provided",
+        });
     }
 
-    if (await Voter.findOne({ mobile })) {
-      return res
-        .status(400)
-        .json({ success: false, message: "Mobile number already registered" });
-    }
-
-    if (await Voter.findOne({ voterId })) {
-      return res
-        .status(400)
-        .json({ success: false, message: "Voter ID already registered" });
-    }
-
-    if (await Voter.findOne({ aadhaar })) {
-      return res
-        .status(400)
-        .json({ success: false, message: "Aadhaar already registered" });
-    }
+    const imageUrl = uploadedFile.path || uploadedFile.url;
 
     // Face detection
-    const img = await canvas.loadImage(photoBuffer);
+    const img = await canvas.loadImage(imageUrl);
     const detection = await faceapi
       .detectSingleFace(img)
       .withFaceLandmarks()
       .withFaceDescriptor();
-
-    if (!detection) {
+    if (!detection)
       return res
         .status(400)
         .json({ success: false, message: "No face detected in the photo" });
-    }
 
     const faceDescriptors = Array.from(detection.descriptor);
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // ✅ hasVoted is added here with default false
     const newUser = await Voter.create({
       firstName,
       lastName,
@@ -278,67 +249,67 @@ const handleRegister = async (req, res) => {
       dob,
       aadhaar,
       mobile,
-      photo: photoData,
+      photo: {
+        public_id: uploadedFile.filename || uploadedFile.public_id,
+        url: uploadedFile.path || uploadedFile.url,
+      },
       faceDescriptors,
-      hasVoted: false, // 👈 added here
+      hasVoted: false,
     });
 
-    res.status(201).json({
-      success: true,
-      message: "Registration successful",
-      role: newUser.role,
-    });
+    res
+      .status(201)
+      .json({
+        success: true,
+        message: "Registration successful",
+        role: newUser.role,
+      });
   } catch (error) {
-    console.error("Registration error:", error);
-    if (uploadedFile && fs.existsSync(uploadedFile.path))
-      fs.unlinkSync(uploadedFile.path);
+    console.error("Registration Error:", error);
     res.status(500).json({ success: false, message: "Registration failed" });
   }
 };
 
-
-/* -------------------- LOGIN -------------------- */
+// -------------------- LOGIN --------------------
 const handleLogin = async (req, res) => {
   try {
     const { email, voterId, password, role } = req.body;
-
-    if (!password || !role) {
+    if (!password || !role)
       return res
         .status(400)
         .json({ success: false, message: "Password and role are required" });
-    }
 
     let user;
     if (role === "admin") {
-      if (!email) {
-        return res.status(400).json({
-          success: false,
-          message: "Email is required for admin login",
-        });
-      }
+      if (!email)
+        return res
+          .status(400)
+          .json({
+            success: false,
+            message: "Email is required for admin login",
+          });
       user = await Voter.findOne({ email, role: "admin" });
     } else {
-      if (!voterId) {
-        return res.status(400).json({
-          success: false,
-          message: "Voter ID is required for voter login",
-        });
-      }
+      if (!voterId)
+        return res
+          .status(400)
+          .json({
+            success: false,
+            message: "Voter ID is required for voter login",
+          });
       user = await Voter.findOne({ voterId, role: "voter" });
     }
 
-    if (!user) {
+    if (!user)
       return res
         .status(401)
         .json({ success: false, message: "Invalid credentials" });
-    }
 
     const isPasswordValid = await bcrypt.compare(password, user.password);
-    if (!isPasswordValid) {
+    if (!isPasswordValid)
       return res
         .status(401)
         .json({ success: false, message: "Invalid credentials" });
-    }
 
     const token = jwt.sign(
       {
@@ -366,6 +337,7 @@ const handleLogin = async (req, res) => {
         mobile: user.mobile,
         role: user.role,
         voterId: user.voterId,
+        photo: user.photo,
       },
     });
   } catch (error) {
@@ -374,18 +346,29 @@ const handleLogin = async (req, res) => {
   }
 };
 
-/* -------------------- GET VOTER PHOTO -------------------- */
-// const getVoterPhoto = async (req, res) => {
-//   try {
-//     const voter = await Voter.findById(req.params.id);
-//     if (!voter || !voter.photo) return res.sendStatus(404);
+const deleteVoter = async (req, res) => {
+  const { voterId } = req.params;
+  try {
+    const voter = await Voter.findOne({ voterId });
+    if (!voter)
+      return res
+        .status(404)
+        .json({ success: false, message: "Voter not found" });
 
-//     res.contentType(voter.photo.contentType);
-//     res.send(voter.photo.data);
-//   } catch (err) {
-//     res.status(500).json({ message: "Failed to fetch photo" });
-//   }
-// };
+    // Delete Cloudinary photo
+    if (voter.photo && voter.photo.public_id) {
+      await cloudinary.uploader.destroy(voter.photo.public_id);
+    }
+
+    await voter.deleteOne();
+    res
+      .status(200)
+      .json({ success: true, message: "Voter deleted successfully" });
+  } catch (error) {
+    console.error("Error deleting voter:", error);
+    res.status(500).json({ success: false, message: "Failed to delete voter" });
+  }
+};
 
 module.exports = {
   sendEmailVerification,
@@ -394,5 +377,5 @@ module.exports = {
   verifyMobileOtp,
   handleRegister,
   handleLogin,
-  // getVoterPhoto,
+  deleteVoter,
 };

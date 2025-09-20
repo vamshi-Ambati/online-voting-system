@@ -285,3 +285,69 @@ tr:hover {
     grid-template-columns: 1fr;
   }
 }
+/* -------------------- DELETE BUTTON -------------------- */
+.delete-btn {
+  background-color: #e74c3c; /* red */
+  color: #fff;
+  border: none;
+  border-radius: 5px;
+  padding: 6px 12px;
+  cursor: pointer;
+  font-size: 0.875rem;
+  transition: background 0.3s ease, transform 0.2s ease;
+}
+
+.delete-btn:hover {
+  background-color: #c0392b;
+  transform: scale(1.05);
+}
+
+.delete-btn:active {
+  transform: scale(0.95);
+}
+
+/* Optional: align the action column */
+table th,
+table td {
+  text-align: left;
+  vertical-align: middle;
+}
+
+table th:last-child,
+table td:last-child {
+  text-align: center;
+}
+
+/* Voted status badges */
+/* .voted-status.voted {
+  color: #27ae60;
+  font-weight: 600;
+  margin-left: 8px;
+}
+
+.voted-status.not-voted {
+  color: #c0392b;
+  font-weight: 600;
+  margin-left: 8px;
+} */
+
+/* Table scroll for responsive view */
+.table-container {
+  overflow-x: auto;
+}
+
+/* Refresh button style */
+.refresh-btn {
+  background-color: #2a5298;
+  color: #fff;
+  border: none;
+  border-radius: 5px;
+  padding: 6px 10px;
+  cursor: pointer;
+  font-size: 0.875rem;
+  transition: background 0.3s ease;
+}
+
+.refresh-btn:hover {
+  background-color: #1f3d70;
+}
