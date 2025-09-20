@@ -40,7 +40,6 @@ router.post("/send-email-verification", sendEmailVerification);
 router.post("/verify-email", verifyEmail);
 router.post("/send-mobile-otp", sendMobileOtp);
 router.post("/verify-mobile-otp", verifyMobileOtp);
-router.delete("/delete/:voterId", deleteVoter); // DELETE voter + Cloudinary photo
+router.delete("/delete/:voterId", deleteVoter); 
 
-// -------------------- EXPORT ROUTER --------------------
 module.exports = router;
