@@ -3,7 +3,7 @@ const express = require("express");
 const router = express.Router();
 const faceapi = require("@vladmandic/face-api");
 const canvas = require("canvas");
-const tf = require("@tensorflow/tfjs-node");
+// const tf = require("@tensorflow/tfjs-node");
 const Voter = require("../models/Voter");
 
 const { Canvas, Image, ImageData } = canvas;
@@ -34,7 +34,7 @@ router.post("/", async (req, res) => {
   }
 
   try {
-    tf.engine().startScope();
+    // tf.engine().startScope();
 
     // 1. Find voter with precomputed face descriptor
     const voter = await Voter.findById(voterId).select("faceDescriptors");
@@ -85,7 +85,7 @@ router.post("/", async (req, res) => {
       message: err.message || "Internal server error during face verification.",
     });
   } finally {
-    tf.engine().endScope(); // free tensor memory
+    // tf.engine().endScope(); // free tensor memory
   }
 });
 
