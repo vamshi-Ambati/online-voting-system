@@ -42,5 +42,5 @@ router.post("/send-mobile-otp", sendMobileOtp);
 router.post("/verify-mobile-otp", verifyMobileOtp);
 router.delete("/delete/:voterId", deleteVoter); // DELETE voter + Cloudinary photo
 
-
+// -------------------- EXPORT ROUTER --------------------
 module.exports = router;
