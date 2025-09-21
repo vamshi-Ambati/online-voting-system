@@ -1,15 +1,15 @@
 const VoterModel = require("../models/Voter");
 const VoteModel = require("../models/Vote");
+const { sendEmailMessage } = require("../utils/rabbitmq"); // Import RabbitMQ sender
 
 // Cast Vote
 const castVote = async (req, res) => {
   try {
-    const { voterId, voter_Name, candidateId, votedFor } = req.body;
-    if (!voterId || !voter_Name || !candidateId || !votedFor) {
+    const { voterId, voter_Name, candidateId, votedFor, voterEmail } = req.body; // Added voterEmail
+    if (!voterId || !voter_Name || !candidateId || !votedFor || !voterEmail) {
       return res.status(400).json({ message: "Missing required vote fields." });
     }
 
-    // Check if already voted
     const existingVote = await VoteModel.findOne({ voterId });
     if (existingVote) {
       return res.status(400).json({ message: "You have already voted." });
@@ -31,6 +31,14 @@ const castVote = async (req, res) => {
       { new: true }
     );
 
+    // Send a message to RabbitMQ for the email notification
+    const emailData = {
+      voter_Name,
+      voterEmail,
+      votedFor,
+    };
+    sendEmailMessage(emailData);
+
     return res.status(201).json({ message: "Vote cast successfully!" });
   } catch (error) {
     console.error("Error casting vote:", error);
@@ -39,7 +47,5 @@ const castVote = async (req, res) => {
       .json({ message: "Server error while casting vote." });
   }
 };
-
-
 
 module.exports = { castVote };

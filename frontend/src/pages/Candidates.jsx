@@ -70,7 +70,9 @@ const Candidates = () => {
 
   useEffect(() => {
     if (userData._id) {
-      const votedId = localStorage.getItem(`votedCandidateId_${userData._id}`);
+      const votedId = localStorage.getItem(
+        `votedCandidateId_${userData.voterId}`
+      );
       if (votedId) setVotedCandidateId(votedId);
     }
     if (userData.role === "voter") getCandidates();
@@ -211,7 +213,7 @@ const Candidates = () => {
     }
 
     const votedCandidateIdForUser = localStorage.getItem(
-      `votedCandidateId_${userData._id}`
+      `votedCandidateId_${userData.voterId}`
     );
     if (votedCandidateIdForUser) {
       toast.info("You have already voted.");
@@ -234,8 +236,9 @@ const Candidates = () => {
         body: JSON.stringify({
           candidateId,
           voterId: userData.voterId,
-          voter_Name: userData.firstName + " " + " " + userData.lastName,
+          voter_Name: `${userData.firstName} ${userData.lastName}`,
           votedFor,
+          voterEmail: userData.email, // Send voter email
         }),
       });
 
@@ -605,12 +608,8 @@ const Candidates = () => {
                   </div>
                   <h4>{candidate.name}</h4>
                   <p className="party-name">{candidate.party}</p>
-                  {/* <p>Email: {candidate.email}</p>
-                  <p>Mobile: {candidate.mobile}</p>
-                  <p>Education: {candidate.education}</p> */}
                   <p>Experience: {candidate.experience}</p>
                   <p>Agenda: {candidate.agenda}</p>
-                  {/* <p>Address: {candidate.address}</p> */}
                 </div>
               ))}
             </div>
