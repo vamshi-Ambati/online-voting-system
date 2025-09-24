@@ -23,6 +23,7 @@ import {
 import { FaChevronDown, FaChevronUp } from "react-icons/fa";
 import apiUrl from "../apiUrl";
 import "../styles/results.css";
+import { toast } from "react-toastify";
 
 // Register chart elements
 Chart.register(
@@ -60,15 +61,14 @@ const chartModes = {
 const timePeriods = {
   HOURLY: "hourly",
   DAILY: "daily",
-  BY_REGION: "by_region",
 };
 
 // Utility to get the full party image URL
-const getPartyImgUrl = (partyImg) => {
-  if (!partyImg) return "";
-  if (/^https?:\/\//.test(partyImg)) return partyImg;
-  return `${apiUrl}${partyImg}`;
-};
+// const getPartyImgUrl = (partyImg) => {
+// if (!partyImg) return "";
+// if (/^https?:\/\//.test(partyImg)) return partyImg;
+// return `${apiUrl}${partyImg}`;
+// };
 
 // Utility to generate a unique random color
 const generateRandomColor = () => {
@@ -83,19 +83,18 @@ const generateRandomColor = () => {
 const ElectionResults = () => {
   const [results, setResults] = useState([]);
   const [historicalData, setHistoricalData] = useState([]);
-  const [regionalData, setRegionalData] = useState([]);
   const [hoveredCandidate, setHoveredCandidate] = useState(null);
   const [chartMode, setChartMode] = useState(chartModes.HORIZONTAL);
   const [timePeriod, setTimePeriod] = useState(timePeriods.DAILY);
   const [loading, setLoading] = useState({
     results: true,
     historical: true,
-    regional: true,
   });
   const [error, setError] = useState("");
   const [selectedCandidate, setSelectedCandidate] = useState(null);
   const [totalVoters, setTotalVoters] = useState(0);
   const [turnout, setTurnout] = useState(0);
+  const [publishingLoading, setPublishingLoading] = useState(false);
 
   // State to store unique colors for each party
   const [partyColors, setPartyColors] = useState({});
@@ -140,6 +139,30 @@ const ElectionResults = () => {
     };
 
     fetchData();
+  }, []);
+
+  // Fetch historical data
+  useEffect(() => {
+    const fetchHistoricalData = async () => {
+      try {
+        setLoading((prev) => ({ ...prev, historical: true }));
+        const res = await fetch(`${apiUrl}/api/results/historical`);
+        if (!res.ok) throw new Error("Failed to fetch historical data");
+        const data = await res.json();
+        if (Array.isArray(data)) {
+          setHistoricalData(data);
+        } else {
+          setHistoricalData([]);
+        }
+      } catch (err) {
+        console.error("Historical data fetch error:", err);
+        setHistoricalData([]);
+      } finally {
+        setLoading((prev) => ({ ...prev, historical: false }));
+      }
+    };
+
+    fetchHistoricalData();
   }, []);
 
   // Effect to assign a unique color to each party
@@ -190,19 +213,6 @@ const ElectionResults = () => {
     })),
   };
 
-  const regionalBarData = {
-    labels: regionalData.map((r) => r.region),
-    datasets: results.map((candidate) => ({
-      label: candidate.candidate,
-      data: regionalData.map(
-        (r) => r.candidates.find((c) => c.id === candidate.id)?.votes || 0
-      ),
-      backgroundColor: partyColors[candidate.party] + "80",
-      borderColor: partyColors[candidate.party],
-      borderWidth: 1,
-    })),
-  };
-
   const lineOptions = {
     responsive: true,
     plugins: {
@@ -216,28 +226,6 @@ const ElectionResults = () => {
     },
     scales: {
       y: {
-        beginAtZero: true,
-      },
-    },
-  };
-
-  const regionalOptions = {
-    responsive: true,
-    plugins: {
-      legend: {
-        position: "top",
-      },
-      title: {
-        display: true,
-        text: "Votes by Region",
-      },
-    },
-    scales: {
-      x: {
-        stacked: true,
-      },
-      y: {
-        stacked: true,
         beginAtZero: true,
       },
     },
@@ -298,13 +286,18 @@ const ElectionResults = () => {
 
   const shareResults = async () => {
     try {
-      await navigator.share({
-        title: `${electionInfo.title} Results`,
-        text: `View the latest results for ${electionInfo.title}`,
-        url: window.location.href,
-      });
+      if (navigator.share) {
+        await navigator.share({
+          title: `${electionInfo.title} Results`,
+          text: `View the latest results for ${electionInfo.title}`,
+          url: window.location.href,
+        });
+      } else {
+        alert("Share functionality is not supported in your browser.");
+      }
     } catch (err) {
-      alert("Share functionality is not supported in your browser");
+      console.error("Share failed:", err);
+      alert("An error occurred while sharing.");
     }
   };
 
@@ -314,6 +307,31 @@ const ElectionResults = () => {
 
   const closeCandidateDetails = () => {
     setSelectedCandidate(null);
+  };
+  const handlePublishResults = async () => {
+    if (
+      window.confirm(
+        "Are you sure you want to publish the election results? This will send an email to all registered voters."
+      )
+    ) {
+      setPublishingLoading(true);
+      try {
+        const response = await fetch(`${apiUrl}/api/results/publish`, {
+          method: "POST",
+        });
+        const data = await response.json();
+        if (response.ok) {
+          toast.success("Election results published successfully!");
+        } else {
+          toast.error(data.message || "Failed to publish election results.");
+        }
+      } catch (err) {
+        console.error("Publish error:", err);
+        toast.error("An error occurred while publishing results.");
+      } finally {
+        setPublishingLoading(false);
+      }
+    }
   };
 
   return (
@@ -423,7 +441,13 @@ const ElectionResults = () => {
             <button className="action-btn" onClick={shareResults}>
               <FiShare2 /> Share
             </button>
-            <button className="action-btn">Publish</button>
+            <button
+              className="action-btn"
+              onClick={handlePublishResults}
+              disabled={publishingLoading}
+            >
+              {publishingLoading ? "Publishing..." : "Publish"}
+            </button>
           </div>
         </div>
       </header>
