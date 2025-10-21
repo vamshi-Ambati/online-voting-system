@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import "../styles/profile.css";
 import { FaUserCircle } from "react-icons/fa";
-import apiUrl from "../apiUrl"; // Adjust the import based on your project structure
+import apiUrl from "../apiUrl";
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
@@ -11,11 +11,15 @@ const ProfilePage = () => {
   const [error, setError] = useState(null);
   const [editMode, setEditMode] = useState(false);
   const [showChangePassword, setShowChangePassword] = useState(false);
+  const [previewImage, setPreviewImage] = useState(null);
+  const [selectedFile, setSelectedFile] = useState(null);
+
   const [passwordForm, setPasswordForm] = useState({
     currentPassword: "",
     newPassword: "",
     confirmPassword: "",
   });
+
   const [formData, setFormData] = useState({
     firstName: "",
     middleName: "",
@@ -26,48 +30,37 @@ const ProfilePage = () => {
     mobile: "",
   });
 
-  // Format date as DD/MM/YYYY
+  /* ---------- Format & Reverse Date ---------- */
   const formatDate = (dateString) => {
     if (!dateString) return "Not specified";
-
     try {
       const date = new Date(dateString);
       if (isNaN(date.getTime())) return "Invalid date";
-
       const day = String(date.getDate()).padStart(2, "0");
       const month = String(date.getMonth() + 1).padStart(2, "0");
       const year = date.getFullYear();
-
       return `${day}/${month}/${year}`;
-    } catch (err) {
-      console.error("Error formatting date:", err);
+    } catch {
       return "Invalid date";
     }
   };
 
-  // Convert DD/MM/YYYY back to YYYY-MM-DD for date input
   const reverseFormatDate = (formattedDate) => {
     if (!formattedDate) return "";
-
     const parts = formattedDate.split("/");
     if (parts.length !== 3) return formattedDate;
-
     return `${parts[2]}-${parts[1]}-${parts[0]}`;
   };
 
-  // Load user data from localStorage
+  /* ---------- Load User Data ---------- */
   useEffect(() => {
     const loadUserData = () => {
       try {
         const storedUser = localStorage.getItem("userData");
-        if (!storedUser) {
-          throw new Error("No user data found. Please log in.");
-        }
+        if (!storedUser) throw new Error("No user data found. Please log in.");
 
         const userData = JSON.parse(storedUser);
-        if (!userData) {
-          throw new Error("Invalid user data format.");
-        }
+        if (!userData) throw new Error("Invalid user data format.");
 
         setUser(userData);
         setFormData({
@@ -80,109 +73,79 @@ const ProfilePage = () => {
           mobile: userData.mobile || "",
         });
       } catch (err) {
-        setError(err instanceof Error ? err.message : String(err));
+        setError(err.message);
       } finally {
         setLoading(false);
       }
     };
-
     loadUserData();
   }, []);
 
+  /* ---------- Handle Input Changes ---------- */
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
+    setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
   const handlePasswordChange = (e) => {
     const { name, value } = e.target;
-    setPasswordForm((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
+    setPasswordForm((prev) => ({ ...prev, [name]: value }));
   };
 
+  /* ---------- Handle File Upload ---------- */
+  const handleFileChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setSelectedFile(file);
+      setPreviewImage(URL.createObjectURL(file));
+    }
+  };
+
+  /* ---------- Submit Profile Update ---------- */
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
     setError(null);
 
     try {
-      // Get user data from storage
-      const authToken =
-        localStorage.getItem("authToken")
-      const userData = JSON.parse(
-        localStorage.getItem("userData") 
-      );
+      const authToken = localStorage.getItem("authToken");
+      const userData = JSON.parse(localStorage.getItem("userData"));
 
-      if (!userData?._id) {
+      if (!authToken || !userData?._id)
         throw new Error("Session expired. Please log in again.");
-      }
 
-      if (!authToken) {
-        throw new Error("Authentication token missing");
-      }
+      const form = new FormData();
+      form.append("userId", userData._id);
+      form.append("firstName", formData.firstName);
+      form.append("middleName", formData.middleName);
+      form.append("lastName", formData.lastName);
+      form.append("email", formData.email);
+      form.append("dob", formData.dob);
+      form.append("gender", formData.gender);
+      form.append("mobile", formData.mobile);
 
-      // Prepare update data
-      const updateData = {
-        userId: userData._id,
-        firstName: formData.firstName,
-        middleName: formData.middleName,
-        lastName: formData.lastName,
-        email: formData.email,
-        dob: formData.dob,
-        gender: formData.gender,
-        mobile: formData.mobile,
-      };
-      const storage = localStorage.getItem("authToken")
-        ? localStorage
-        : sessionStorage;
-      // Make API request
+      if (selectedFile) form.append("photo", selectedFile);
+
       const response = await fetch(`${apiUrl}/api/users/profile`, {
         method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${authToken}`,
-        },
-        body: JSON.stringify(updateData),
+        headers: { Authorization: `Bearer ${authToken}` },
+        body: form,
       });
 
       const result = await response.json();
 
-      if (!response.ok) {
-        throw new Error(result.message || "Failed to update profile");
-      }
+      if (!response.ok) throw new Error(result.message || "Update failed");
 
-      if (!result.success) {
-        throw new Error(result.message || "Update failed");
-      }
-
-      // Update local storage
-
-      storage.setItem("userData", JSON.stringify(result.user));
-
-      // Update state
+      toast.success("Profile updated successfully!");
+      localStorage.setItem("userData", JSON.stringify(result.user));
       setUser(result.user);
       setEditMode(false);
-      toast.success("Profile updated successfully!");
+      setPreviewImage(null);
+      setSelectedFile(null);
     } catch (err) {
       console.error("Update error:", err);
+      toast.error(err.message || "Error updating profile");
       setError(err.message);
-      toast.error(err.message || "An error occurred");
-
-      if (err.message.includes("session") || err.message.includes("expired")) {
-        // Clear invalid session data
-        localStorage.removeItem("authToken");
-        localStorage.removeItem("userData");
-        sessionStorage.removeItem("authToken");
-        sessionStorage.removeItem("userData");
-
-        // Redirect to login
-        navigate("/login");
-      }
     } finally {
       setLoading(false);
     }
@@ -190,8 +153,7 @@ const ProfilePage = () => {
 
   const handlePasswordSubmit = (e) => {
     e.preventDefault();
-    // Add your password change logic here
-    alert("Password change functionality would be implemented here");
+    toast.info("Password change feature coming soon.");
     setShowChangePassword(false);
   };
 
@@ -199,13 +161,24 @@ const ProfilePage = () => {
   if (error) return <div className="error">{error}</div>;
   if (!user) return <div className="error">No user data available</div>;
 
+  /* ---------- JSX ---------- */
   return (
     <div className="profile-container">
       <div className="profile-header">
         <div className="avatar-container">
-          <div className="profile-avatar">
-            <FaUserCircle className="blue-avatar" />
-          </div>
+          {/* ✅ Passport-style image display */}
+          {previewImage ? (
+            <img src={previewImage} alt="Preview" className="profile-photo" />
+          ) : user.photo?.url ? (
+            <img
+              src={user.photo.url}
+              alt="User Avatar"
+              className="profile-photo"
+            />
+          ) : (
+            <FaUserCircle className="profile-avatar blue-avatar" />
+          )}
+
           {!editMode && !showChangePassword && (
             <div className="profile-actions">
               <button className="edit-button" onClick={() => setEditMode(true)}>
@@ -221,9 +194,17 @@ const ProfilePage = () => {
           )}
         </div>
 
+        {/* ---------- Edit Profile ---------- */}
         {editMode ? (
           <form onSubmit={handleSubmit} className="profile-form">
             <h3 className="section-title">Personal Information</h3>
+
+            {/* Photo Upload */}
+            <div className="form-group">
+              <label>Profile Photo (Passport Style)</label>
+              <input type="file" accept="image/*" onChange={handleFileChange} />
+            </div>
+
             <div className="form-row">
               <div className="form-group">
                 <label>First Name</label>
@@ -315,17 +296,8 @@ const ProfilePage = () => {
                 className="cancel-button"
                 onClick={() => {
                   setEditMode(false);
-                  setFormData({
-                    firstName: user.firstName || "",
-                    middleName: user.middleName || "",
-                    lastName: user.lastName || "",
-                    email: user.email || "",
-                    dob: user.dob
-                      ? reverseFormatDate(formatDate(user.dob))
-                      : "",
-                    gender: user.gender || "",
-                    mobile: user.mobile || "",
-                  });
+                  setPreviewImage(null);
+                  setSelectedFile(null);
                 }}
               >
                 Cancel
@@ -333,6 +305,7 @@ const ProfilePage = () => {
             </div>
           </form>
         ) : showChangePassword ? (
+          /* ---------- Change Password ---------- */
           <form onSubmit={handlePasswordSubmit} className="password-form">
             <h3 className="section-title">Change Password</h3>
             <div className="form-group">
@@ -379,6 +352,7 @@ const ProfilePage = () => {
             </div>
           </form>
         ) : (
+          /* ---------- Profile Info Display ---------- */
           <div className="profile-info">
             <h3 className="section-title">Personal Information</h3>
             <div className="profile-details">
@@ -390,12 +364,10 @@ const ProfilePage = () => {
                   {user.lastName}
                 </span>
               </div>
-
               <div className="detail-item">
                 <span className="detail-label">Date of Birth:</span>
                 <span className="detail-value">{formatDate(user.dob)}</span>
               </div>
-
               <div className="detail-item">
                 <span className="detail-label">Gender:</span>
                 <span className="detail-value">
@@ -404,19 +376,16 @@ const ProfilePage = () => {
                     : "Not specified"}
                 </span>
               </div>
-
               <div className="detail-item">
                 <span className="detail-label">Email:</span>
                 <span className="detail-value">{user.email}</span>
               </div>
-
               <div className="detail-item">
                 <span className="detail-label">Mobile Number:</span>
                 <span className="detail-value">
                   {user.mobile || "Not specified"}
                 </span>
               </div>
-
               <div className="detail-item">
                 <span className="detail-label">Role:</span>
                 <span className="detail-value">
@@ -425,8 +394,6 @@ const ProfilePage = () => {
                     : "Not specified"}
                 </span>
               </div>
-
-              {/* Only show Voter ID if user is not admin */}
               {user.role !== "admin" && (
                 <div className="detail-item">
                   <span className="detail-label">Voter ID:</span>

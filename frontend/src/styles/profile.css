@@ -10,6 +10,7 @@
 .profile-header {
   display: flex;
   flex-direction: column;
+  align-items: center;
   gap: 2rem;
 }
 
@@ -20,32 +21,46 @@
   gap: 1rem;
 }
 
-.profile-avatar {
-  font-size: 6rem;
-  color: #4285f4;
+/* ------------------------ */
+/* 🪪 Profile Photo (Passport Style) */
+/* ------------------------ */
+.profile-photo {
+  width: 100px;
+  height: 150px;
+  object-fit: cover;
+  /* border: 2px solid #ddd; */
+  border-radius: 50%;
+  background-color: #f9f9f9;
+  transition: all 0.3s ease;
 }
 
-.blue-avatar {
-  color: #4285f4;
+.profile-photo:hover {
+  border-color: #4285f4;
+  transform: scale(1.03);
 }
 
+/* ------------------------ */
+/* ⚙️ Action Buttons */
+/* ------------------------ */
 .profile-actions {
   display: flex;
   gap: 1rem;
   margin-top: 1rem;
 }
 
-.edit-button, .change-password-button {
-  padding: 0.5rem 1rem;
+.edit-button,
+.change-password-button {
+  padding: 0.6rem 1.2rem;
   border: none;
-  border-radius: 4px;
+  border-radius: 5px;
   cursor: pointer;
   font-weight: 500;
+  color: #fff;
+  transition: all 0.2s ease;
 }
 
 .edit-button {
   background-color: #4285f4;
-  color: white;
 }
 
 .edit-button:hover {
@@ -54,20 +69,27 @@
 
 .change-password-button {
   background-color: #34a853;
-  color: white;
 }
 
 .change-password-button:hover {
   background-color: #2d9248;
 }
 
+/* ------------------------ */
+/* 🧾 Section Titles */
+/* ------------------------ */
 .section-title {
   color: #4285f4;
   margin-bottom: 1.5rem;
   border-bottom: 1px solid #eee;
   padding-bottom: 0.5rem;
+  text-align: left;
+  width: 100%;
 }
 
+/* ------------------------ */
+/* 📋 Profile Info Display */
+/* ------------------------ */
 .profile-info {
   width: 100%;
 }
@@ -94,19 +116,31 @@
   color: #333;
 }
 
-.profile-form, .password-form {
+/* ------------------------ */
+/* ✏️ Edit Profile & 🔐 Change Password Forms */
+/* ------------------------ */
+.profile-form,
+.password-form {
   width: 100%;
+  margin-top: 1rem;
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 .form-row {
   display: flex;
   gap: 1rem;
   margin-bottom: 1rem;
+  flex-wrap: wrap;
 }
 
 .form-group {
   flex: 1;
-  margin-bottom: 1rem;
+  min-width: 200px;
 }
 
 .form-group label {
@@ -124,12 +158,24 @@
   border-radius: 4px;
   font-family: inherit;
   font-size: 1rem;
+  transition: border-color 0.2s ease;
 }
 
+.form-group input:focus,
+.form-group select:focus {
+  outline: none;
+  border-color: #4285f4;
+  box-shadow: 0 0 4px rgba(66, 133, 244, 0.3);
+}
+
+/* ------------------------ */
+/* 💾 Form Buttons */
+/* ------------------------ */
 .form-actions {
   display: flex;
   gap: 1rem;
   margin-top: 2rem;
+  justify-content: flex-end;
 }
 
 .save-button,
@@ -139,6 +185,7 @@
   border-radius: 4px;
   font-weight: 500;
   cursor: pointer;
+  transition: all 0.2s ease;
 }
 
 .save-button {
@@ -159,20 +206,25 @@
   background-color: #e0e0e0;
 }
 
-.loading {
+/* ------------------------ */
+/* 🕒 Loading & Error States */
+/* ------------------------ */
+.loading,
+.error {
   text-align: center;
   padding: 2rem;
-  font-size: 1.2rem;
+  font-size: 1.1rem;
+  border-radius: 4px;
+  margin: 2rem auto;
+  max-width: 600px;
+}
+
+.loading {
   color: #666;
 }
 
 .error {
-  text-align: center;
-  padding: 2rem;
-  font-size: 1.2rem;
   color: #d32f2f;
   background-color: #fdecea;
-  border-radius: 4px;
-  margin: 2rem auto;
-  max-width: 600px;
+  border: 1px solid #f5c2c2;
 }
