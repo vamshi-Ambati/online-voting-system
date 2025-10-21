@@ -2,7 +2,7 @@ const express = require("express");
 const cors = require("cors");
 const path = require("path");
 const { connectMongoDB } = require("./connection");
-const { connectRabbitMQ } = require("./utils/rabbitmq"); 
+const { connectRabbitMQ } = require("./utils/rabbitmq");
 
 const app = express();
 
@@ -55,12 +55,9 @@ app.use("/api/results", resultRouter);
 app.use("/api/elections", electionsRouter);
 app.use("/api/verify-face", faceVerifyRouter);
 
-
 app.get("/", (req, res) => {
   res.send("Election API Server - Hello, World!");
 });
-
-
 
 const PORT = process.env.PORT || 3000;
 const server = app.listen(PORT, () => {

@@ -1,10 +1,107 @@
-.footer {
-  background-color: #333;
-  color: white;
-  text-align: center;
-  padding: 1rem;
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  width: 100%;
+/* Footer.css */
+
+.footer-voting-system {
+    background-color: #1a237e; /* Deep Indigo/Navy */
+    color: #e8eaf6; /* Light gray-blue for text */
+    padding: 40px 20px 0;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    border-top: 5px solid #4caf50; /* A green accent for 'secure' */
+}
+
+.footer-content-wrapper {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding-bottom: 30px;
+}
+
+.footer-section {
+    flex: 1 1 200px; /* Allows sections to wrap on smaller screens */
+    margin: 15px;
+}
+
+.footer-section h3, .footer-section h4 {
+    color: #bbdefb; /* Lighter blue for headings */
+    margin-bottom: 15px;
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 1.1em;
+}
+
+.footer-section p {
+    font-size: 0.9em;
+    line-height: 1.6;
+    margin-bottom: 10px;
+}
+
+/* Links */
+.footer-section ul {
+    list-style: none;
+    padding: 0;
+}
+
+.footer-section li {
+    margin-bottom: 8px;
+}
+
+.footer-section a {
+    color: #e8eaf6;
+    text-decoration: none;
+    transition: color 0.3s;
+    font-size: 0.9em;
+    display: flex;
+    align-items: center;
+}
+
+.footer-section a:hover {
+    color: #4caf50; /* Green accent on hover */
+    text-decoration: underline;
+}
+
+/* Icons */
+.link-icon, .contact-icon {
+    margin-right: 8px;
+    color: #81d4fa; /* Light blue for link icons */
+}
+
+/* Security Seal */
+.security-seal {
+    display: flex;
+    align-items: center;
+    margin-top: 15px;
+    font-weight: bold;
+    color: #4caf50; /* Green for security text */
+}
+
+.shield-icon {
+    font-size: 1.5em;
+    margin-right: 10px;
+}
+
+/* Bottom Bar */
+.footer-bottom-bar {
+    text-align: center;
+    padding: 15px 0;
+    border-top: 1px solid #3f51b5; /* Slightly lighter line */
+    font-size: 0.8em;
+}
+
+.status-link {
+    color: #a5d6a7; /* Light green status link */
+    margin-left: 10px;
+    font-weight: bold;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .footer-content-wrapper {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .footer-section {
+        margin: 15px 0;
+    }
 }

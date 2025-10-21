@@ -118,7 +118,7 @@ export default function Login() {
       setLoginSuccess(true);
 
       setTimeout(
-        () => navigate(formData.role === "admin" ? "/dashboard" : "/dashboard"),
+        () => navigate(formData.role === "admin" ? "/dashboard" : "/candidates"),
         1500
       );
     } catch (error) {

@@ -10,7 +10,7 @@ import Login from "./pages/Login";
 import Navbar from "./components/Navbar";
 // import Error from "./pages/ErrorPage";
 // import AdminDashboard from "./pages/AdminDashboard";
-import Footer from "./components/Footer";
+// import Footer from "./components/Footer";
 import Logout from "./pages/Logout";
 import ProfilePage from "./pages/ProfilePage";
 
@@ -32,7 +32,7 @@ const App = () => {
           <Route path="/profile" element={<ProfilePage />} />
           <Route path="*" element={<Error />} />
         </Routes>
-        <Footer />
+        {/* <Footer /> */}
       </BrowserRouter>
     </>
   );

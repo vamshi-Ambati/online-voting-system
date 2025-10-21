@@ -65,12 +65,7 @@ const publishElectionResults = async (req, res) => {
   try {
     const totalVoters = await VoterModel.countDocuments();
     const voteCounts = await Vote.aggregate([
-      {
-        $group: {
-          _id: "$candidateId",
-          votes: { $sum: 1 },
-        },
-      },
+      { $group: { _id: "$candidateId", votes: { $sum: 1 } } },
     ]);
     const candidates = await Candidate.find();
     const totalVotes = voteCounts.reduce((sum, c) => sum + c.votes, 0);
@@ -85,9 +80,12 @@ const publishElectionResults = async (req, res) => {
       party: candidate.party,
       votes: voteMap[candidate._id.toString()] || 0,
     }));
-    results.sort((a, b) => b.votes - a.votes);
 
-    const winner = results.length > 0 ? results[0] : null;
+    // Sort by votes (desc) and then alphabetically (as a secondary rule)
+    results.sort((a, b) => b.votes - a.votes || a.name.localeCompare(b.name));
+
+    const topVotes = results.length > 0 ? results[0].votes : 0;
+    const winners = results.filter((r) => r.votes === topVotes);
 
     const allVoters = await VoterModel.find({}, "email firstName lastName");
 
@@ -95,6 +93,28 @@ const publishElectionResults = async (req, res) => {
       const voterName = `${voter.firstName || ""} ${
         voter.lastName || ""
       }`.trim();
+
+      // Winner message handling
+      let winnerMessage = "";
+      if (winners.length === 1) {
+        winnerMessage = `
+          <p style="text-align: center; font-size: 1.2em; color: #007BFF; padding: 10px; border: 2px solid #007BFF; border-radius: 5px; margin-top: 20px;">
+            The winner is <strong style="color: #0056b3;">${winners[0].name}</strong>
+            from the <span style="color: #0056b3;">${winners[0].party}</span> party!
+          </p>`;
+      } else {
+        winnerMessage = `
+          <p style="text-align: center; font-size: 1.2em; color: #FF5722; padding: 10px; border: 2px solid #FF5722; border-radius: 5px; margin-top: 20px;">
+            It's a <strong>TIE</strong> between:
+            ${winners
+              .map(
+                (w) =>
+                  `<br><strong style="color: #d84315;">${w.name}</strong> (${w.party})`
+              )
+              .join("")}
+          </p>`;
+      }
+
       const emailData = {
         voterEmail: voter.email,
         voter_Name: voterName,
@@ -103,8 +123,10 @@ const publishElectionResults = async (req, res) => {
           <div style="font-family: Arial, sans-serif; max-width: 600px; margin: auto; padding: 20px; border: 1px solid #ddd; border-radius: 8px;">
             <h2 style="color: #333; text-align: center;">Election Results</h2>
             <p style="color: #555;">Hello ${voterName},</p>
-            <p style="color: #555;">The final election results are here! We would like to thank you for your participation.</p>
-            <p style="color: #333;"><strong>Total Votes Cast:</strong> <span style="font-size: 1.2em; color: #007BFF;">${totalVotes}</span></p>
+            <p style="color: #555;">The final election results are here! Thank you for your participation.</p>
+            <p style="color: #333;"><strong>Total Votes Cast:</strong> 
+              <span style="font-size: 1.2em; color: #007BFF;">${totalVotes}</span>
+            </p>
             <h3 style="color: #333;">Final Standings:</h3>
             <ul style="list-style-type: none; padding: 0;">
               ${results
@@ -122,13 +144,7 @@ const publishElectionResults = async (req, res) => {
                 )
                 .join("")}
             </ul>
-            ${
-              winner
-                ? `<p style="text-align: center; font-size: 1.2em; color: #007BFF; padding: 10px; border: 2px solid #007BFF; border-radius: 5px; margin-top: 20px;">
-                    The winner is <strong style="color: #0056b3;">${winner.name}</strong> from the <span style="color: #0056b3;">${winner.party}</span> party!
-                  </p>`
-                : ""
-            }
+            ${winnerMessage}
             <p style="color: #777; font-size: 0.9em; margin-top: 20px;">Best regards,</p>
             <p style="color: #777; font-size: 0.9em;">The E-Voting Team</p>
           </div>
@@ -138,13 +154,17 @@ const publishElectionResults = async (req, res) => {
     });
 
     res.status(200).json({
-      message: "Election results are published.",
+      message:
+        winners.length > 1
+          ? "Election resulted in a tie between multiple candidates."
+          : `Election results published. Winner: ${winners[0].name}`,
     });
   } catch (err) {
     console.error("Error publishing election results:", err);
     res.status(500).json({ message: "Error publishing election results." });
   }
 };
+ 
 
 module.exports = {
   getElectionResults,
