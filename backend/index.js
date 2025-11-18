@@ -18,7 +18,7 @@ app.use(
       if (allowedOrigins.includes("*") || allowedOrigins.includes(origin)) {
         return callback(null, true);
       } else {
-        console.warn(`❌ CORS blocked: ${origin}`);
+        console.warn(`CORS blocked: ${origin}`);
         return callback(new Error("Not allowed by CORS"));
       }
     },
@@ -40,7 +40,6 @@ connectMongoDB();
 
 connectRabbitMQ(); // Connect to RabbitMQ on server startup
 
-/* -------------------- ROUTES -------------------- */
 const voterRouter = require("./routes/voter");
 const candidateRouter = require("./routes/candidate");
 const voteRouter = require("./routes/vote");
@@ -61,7 +60,7 @@ app.get("/", (req, res) => {
 
 const PORT = process.env.PORT || 3000;
 const server = app.listen(PORT, () => {
-  console.log(`✅ Server running at http://localhost:${PORT}`);
+  console.log(`Server running at http://localhost:${PORT}`);
 });
 
 process.on("SIGTERM", () => {

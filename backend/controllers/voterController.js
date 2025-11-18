@@ -52,23 +52,34 @@ ensureModels();
 // -------------------- MOBILE OTP --------------------
 const sendMobileOtp = async (req, res) => {
   const { mobile } = req.body;
-  if (!mobile || !/^\d{10}$/.test(mobile))
+
+  // Validate mobile number
+  if (!mobile || !/^\d{10}$/.test(mobile)) {
     return res
       .status(400)
       .json({ message: "Valid 10-digit mobile number required" });
+  }
 
   try {
+    // Check if the mobile number already exists
+    const existingUser = await mobileOTP.findOne({ mobile });
+    if (existingUser) {
+      return res
+        .status(400)
+        .json({ message: "Mobile number already registered" });
+    }
+
+    // Send OTP via 2factor.in API
     const response = await axios.get(
       `https://2factor.in/API/V1/${process.env.TWOFCTOR_IN_API_KEY}/SMS/${mobile}/AUTOGEN`
     );
 
     if (response.data.Status === "Success") {
       const sessionId = response.data.Details;
-      await mobileOTP.findOneAndReplace(
-        { mobile },
-        { mobile, sessionId },
-        { upsert: true }
-      );
+
+      // Save mobile and sessionId in DB
+      await mobileOTP.create({ mobile, sessionId });
+
       res.status(200).json({ success: true, message: "OTP sent to mobile" });
     } else {
       throw new Error("Failed to send OTP");
@@ -78,6 +89,7 @@ const sendMobileOtp = async (req, res) => {
     res.status(500).json({ message: "Failed to send OTP" });
   }
 };
+
 
 const verifyMobileOtp = async (req, res) => {
   const { mobile, otp } = req.body;
