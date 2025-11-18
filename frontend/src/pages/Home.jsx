@@ -1,8 +1,10 @@
 import React, { useState } from "react";
 import "../styles/Home.css";
 import { useNavigate } from "react-router-dom";
+
 const Home = () => {
   const [email, setEmail] = useState("");
+  const [showVideo, setShowVideo] = useState(false);
   const navigate = useNavigate();
 
   const handleSubscribe = (e) => {
@@ -10,9 +12,19 @@ const Home = () => {
     alert(`Thank you for subscribing with: ${email}`);
     setEmail("");
   };
+
   const handleGetStarted = () => {
     navigate("/register");
   };
+
+  const handleViewDemo = () => {
+    setShowVideo(true);
+  };
+
+  const closeVideo = () => {
+    setShowVideo(false);
+  };
+
   return (
     <div className="voting-app">
       {/* Hero Section */}
@@ -27,7 +39,9 @@ const Home = () => {
             <button className="cta-button" onClick={handleGetStarted}>
               Get Started
             </button>
-            <button className="secondary-button">View Demo</button>
+            <button className="secondary-button" onClick={handleViewDemo}>
+              View Demo
+            </button>
           </div>
         </div>
         <div className="hero-image">
@@ -41,21 +55,26 @@ const Home = () => {
         </div>
       </section>
 
+      {/* Video Modal */}
+      {showVideo && (
+        <div className="video-modal">
+          <div className="video-content">
+            <button className="close-button" onClick={closeVideo}>
+              &times;
+            </button>
+            <video width="800" controls autoPlay>
+              <source src="/demo.mp4" type="video/mp4" />
+              Your browser does not support the video tag.
+            </video>
+          </div>
+        </div>
+      )}
+
       {/* Features Section */}
       <section id="features" className="features">
         <div className="container">
           <h2>Why Choose SecureVote?</h2>
           <div className="features-grid">
-            {/* <div className="feature-card">
-              <div className="feature-icon">
-                <i className="fas fa-shield-alt"></i>
-              </div>
-              <h3>Military-Grade Security</h3>
-              <p>
-                End-to-end encryption and blockchain technology ensure your vote
-                remains secure and anonymous.
-              </p>
-            </div> */}
             <div className="feature-card">
               <div className="feature-icon">
                 <i className="fas fa-check-circle"></i>
@@ -98,14 +117,6 @@ const Home = () => {
                 integrity of every election:
               </p>
               <ul>
-                {/* <li>
-                  <i className="fas fa-fingerprint"></i> Multi-factor
-                  authentication
-                </li>
-                <li>
-                  <i className="fas fa-lock"></i> Blockchain-based vote
-                  recording
-                </li> */}
                 <li>
                   <i className="fas fa-user-shield"></i> Voter identity
                   protection
@@ -130,18 +141,6 @@ const Home = () => {
           </div>
         </div>
       </section>
-
-      {/* CTA Section */}
-      {/* <section className="cta">
-        <div className="container">
-          <h2>Ready to Modernize Your Voting Process?</h2>
-          <p>
-            Join thousands of organizations that trust SecureVote for their
-            elections.
-          </p>
-          <button className="cta-button">Start Free Trial</button>
-        </div>
-      </section> */}
 
       {/* Newsletter Section */}
       <section className="newsletter">
