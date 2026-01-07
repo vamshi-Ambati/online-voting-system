@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import "../styles/Home.css";
 import { useNavigate } from "react-router-dom";
+import Chatbot from "./Chatbot"; // <-- ADD THIS
 
 const Home = () => {
   const [email, setEmail] = useState("");
@@ -54,7 +55,6 @@ const Home = () => {
           </div>
         </div>
       </section>
-
       {/* Video Modal */}
       {showVideo && (
         <div className="video-modal">
@@ -69,7 +69,6 @@ const Home = () => {
           </div>
         </div>
       )}
-
       {/* Features Section */}
       <section id="features" className="features">
         <div className="container">
@@ -85,6 +84,7 @@ const Home = () => {
                 anonymity.
               </p>
             </div>
+
             <div className="feature-card">
               <div className="feature-icon">
                 <i className="fas fa-mobile-alt"></i>
@@ -92,6 +92,7 @@ const Home = () => {
               <h3>Mobile Accessibility</h3>
               <p>Vote from anywhere using our responsive mobile platform.</p>
             </div>
+
             <div className="feature-card">
               <div className="feature-icon">
                 <i className="fas fa-chart-bar"></i>
@@ -105,9 +106,8 @@ const Home = () => {
           </div>
         </div>
       </section>
-
       {/* Security Section */}
-      <section className="security">
+      {/* <section className="security">
         <div className="container">
           <div className="security-content">
             <div className="security-text">
@@ -127,6 +127,7 @@ const Home = () => {
                 </li>
               </ul>
             </div>
+
             <div className="security-visual">
               <div className="encryption-animation">
                 <div className="data-block">Vote Data</div>
@@ -140,16 +141,16 @@ const Home = () => {
             </div>
           </div>
         </div>
-      </section>
-
+      </section> */}
       {/* Newsletter Section */}
-      <section className="newsletter">
+      {/* <section className="newsletter">
         <div className="container">
           <h2>Stay Updated</h2>
           <p>
             Subscribe to our newsletter for updates on new features and election
             best practices.
           </p>
+
           <form onSubmit={handleSubscribe} className="subscribe-form">
             <input
               type="email"
@@ -161,8 +162,7 @@ const Home = () => {
             <button type="submit">Subscribe</button>
           </form>
         </div>
-      </section>
-
+      </section> */}
       {/* Footer */}
       <footer className="footer">
         <div className="container">
@@ -177,6 +177,7 @@ const Home = () => {
                 for everyone.
               </p>
             </div>
+
             <div className="footer-section">
               <h3>Company</h3>
               <ul>
@@ -191,6 +192,7 @@ const Home = () => {
                 </li>
               </ul>
             </div>
+
             <div className="footer-section">
               <h3>Resources</h3>
               <ul>
@@ -205,6 +207,7 @@ const Home = () => {
                 </li>
               </ul>
             </div>
+
             <div className="footer-section">
               <h3>Legal</h3>
               <ul>
@@ -220,11 +223,14 @@ const Home = () => {
               </ul>
             </div>
           </div>
+
           <div className="footer-bottom">
             <p>&copy; 2023 SecureVote. All rights reserved.</p>
           </div>
         </div>
       </footer>
+      {/* Floating Chatbot */}
+      {/* <Chatbot /> */}
     </div>
   );
 };
