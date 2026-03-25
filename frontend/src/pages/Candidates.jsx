@@ -4,8 +4,11 @@ import { FiPlus, FiUsers, FiList, FiUpload, FiX } from "react-icons/fi";
 import Webcam from "react-webcam";
 import "../styles/candidates.css";
 import apiUrl from "../apiUrl";
+import { useTranslation } from "react-i18next";
 
 const Candidates = () => {
+  const { t } = useTranslation();
+
   const [candidates, setCandidates] = useState([]);
   const [voters, setVoters] = useState([]);
   const [showAddForm, setShowAddForm] = useState(false);
@@ -27,8 +30,6 @@ const Candidates = () => {
   const [loadingVote, setLoadingVote] = useState(false);
   const [previewImage, setPreviewImage] = useState(null);
   const [previewSymbol, setPreviewSymbol] = useState(null);
-
-  // Face Verification state
   const [showFaceVerification, setShowFaceVerification] = useState(false);
   const [capturedImage, setCapturedImage] = useState(null);
   const [verificationLoading, setVerificationLoading] = useState(false);
@@ -40,7 +41,6 @@ const Candidates = () => {
     role: "voter",
   };
 
-  // Fetch candidates
   const getCandidates = useCallback(async () => {
     try {
       const response = await fetch(`${apiUrl}/api/candidates/getCandidates`);
@@ -50,11 +50,10 @@ const Candidates = () => {
       setShowAddForm(false);
       setShowVoters(false);
     } catch {
-      toast.error("Failed to load candidates.");
+      toast.error(t("candidates.errorLoadCandidates"));
     }
-  }, []);
+  }, [t]);
 
-  // Fetch voters
   const getVoters = useCallback(async () => {
     try {
       const response = await fetch(`${apiUrl}/api/candidates/getAllVoters`);
@@ -64,21 +63,20 @@ const Candidates = () => {
       setShowCandidates(false);
       setShowAddForm(false);
     } catch {
-      toast.error("Failed to load voters.");
+      toast.error(t("candidates.errorLoadVoters"));
     }
-  }, []);
+  }, [t]);
 
   useEffect(() => {
     if (userData._id) {
       const votedId = localStorage.getItem(
-        `votedCandidateId_${userData.voterId}`
+        `votedCandidateId_${userData.voterId}`,
       );
       if (votedId) setVotedCandidateId(votedId);
     }
     if (userData.role === "voter") getCandidates();
   }, [userData._id, userData.role, getCandidates]);
 
-  // Preview file uploads
   const handleImagePreview = (e, type) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -95,25 +93,21 @@ const Candidates = () => {
     reader.readAsDataURL(file);
   };
 
-  // Handle input change
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setNewCandidate((prev) => ({ ...prev, [name]: value }));
   };
 
-  // Add candidate
   const handleAddCandidate = async (e) => {
     e.preventDefault();
     if (!newCandidate.photo || !newCandidate.partySymbol) {
-      toast.error("Candidate photo and party symbol are required.");
+      toast.error(t("candidates.photoRequired"));
       return;
     }
-
     const formData = new FormData();
     Object.entries(newCandidate).forEach(([key, value]) => {
       if (value) formData.append(key, value);
     });
-
     try {
       const response = await fetch(`${apiUrl}/api/candidates`, {
         method: "POST",
@@ -121,7 +115,7 @@ const Candidates = () => {
       });
       const data = await response.json();
       if (response.ok) {
-        toast.success(data.message || "Candidate added successfully!");
+        toast.success(data.message || t("candidates.addSuccess"));
         setNewCandidate({
           name: "",
           party: "",
@@ -139,94 +133,78 @@ const Candidates = () => {
         getCandidates();
         setShowAddForm(false);
       } else {
-        toast.error(data.message || "Failed to add candidate.");
+        toast.error(data.message || t("candidates.addFail"));
       }
     } catch {
-      toast.error("An error occurred while adding candidate.");
+      toast.error(t("candidates.addError"));
     }
   };
 
-  // Face capture
   const handleFaceCapture = () => {
     const imageSrc = webcamRef.current.getScreenshot();
     if (imageSrc) {
       setCapturedImage(imageSrc);
       setVerificationMessage("");
     } else {
-      toast.error("Failed to capture image. Please try again.");
+      toast.error(t("candidates.captureError"));
     }
   };
 
-  // Face verification + voting
   const verifyAndVote = async () => {
     if (!capturedImage) {
-      setVerificationMessage("Please capture your face first.");
+      setVerificationMessage(t("candidates.captureFirst"));
       return;
     }
-
     if (!userData || !userData._id) {
-      toast.error("User data not found. Please log in again.");
+      toast.error(t("candidates.loginRequired"));
       return;
     }
-
     setVerificationLoading(true);
-    setVerificationMessage("Verifying face...");
-
+    setVerificationMessage(t("candidates.verifying"));
     try {
       const response = await fetch(`${apiUrl}/api/verify-face`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          voterId: userData._id,
-          image: capturedImage,
-        }),
+        body: JSON.stringify({ voterId: userData._id, image: capturedImage }),
       });
-
       const data = await response.json();
       if (response.ok && data.match) {
-        setVerificationMessage("Face verified successfully! Casting vote...");
+        setVerificationMessage(t("candidates.verifySuccess"));
         await handleVote(candidateToVote._id, candidateToVote.party);
         setShowFaceVerification(false);
       } else {
-        setVerificationMessage(
-          data.message || "Face verification failed. Please try again."
-        );
-        toast.error(data.message || "Face verification failed.");
+        setVerificationMessage(data.message || t("candidates.verifyFail"));
+        toast.error(data.message || t("candidates.verifyFail"));
       }
     } catch (err) {
       console.error("Verification error:", err);
-      setVerificationMessage("An error occurred during verification.");
-      toast.error("An error occurred during verification.");
+      setVerificationMessage(t("candidates.verifyError"));
+      toast.error(t("candidates.verifyError"));
     } finally {
       setVerificationLoading(false);
     }
   };
 
-  // Handle vote click
   const handleVoteBtn = (candidateId) => {
     const candidate = candidates.find((c) => c._id === candidateId);
     if (!candidate) return;
-
     if (!userData || !userData._id) {
-      toast.error("You must be logged in as a voter to vote.");
+      toast.error(t("candidates.loginRequired"));
       return;
     }
-
     const votedCandidateIdForUser = localStorage.getItem(
-      `votedCandidateId_${userData.voterId}`
+      `votedCandidateId_${userData.voterId}`,
     );
     if (votedCandidateIdForUser) {
-      toast.info("You have already voted.");
+      toast.info(t("candidates.alreadyVoted"));
       return;
     }
-
     setCandidateToVote(candidate);
     setShowFaceVerification(true);
     setCapturedImage(null);
     setVerificationMessage("");
   };
 
-  // Submit vote
   const handleVote = async (candidateId, votedFor) => {
     setLoadingVote(true);
     try {
@@ -238,42 +216,41 @@ const Candidates = () => {
           voterId: userData.voterId,
           voter_Name: `${userData.firstName} ${userData.lastName}`,
           votedFor,
-          voterEmail: userData.email, // Send voter email
+          voterEmail: userData.email,
         }),
       });
-
       const data = await response.json();
       if (response.ok) {
-        toast.success(data.message || `Vote cast successfully!`);
+        toast.success(data.message || t("candidates.voteSuccess"));
         setVotedCandidateId(candidateId);
         localStorage.setItem(
           `votedCandidateId_${userData.voterId}`,
-          candidateId
+          candidateId,
         );
       } else {
-        toast.error(data.message || "Failed to cast vote.");
+        toast.error(data.message || t("candidates.voteFail"));
       }
     } catch {
-      toast.error("An error occurred while voting.");
+      toast.error(t("candidates.voteError"));
     }
     setLoadingVote(false);
   };
 
   return (
     <div className="candidate-container">
-      <h2>Election Candidates</h2>
+      <h2>{t("candidates.title")}</h2>
 
       {/* Admin Controls */}
       {userData.role === "admin" && (
         <div className="admin-controls">
           <button className="control-btn" onClick={() => setShowAddForm(true)}>
-            <FiPlus /> Add Candidate
+            <FiPlus /> {t("candidates.addCandidate")}
           </button>
           <button className="control-btn" onClick={getCandidates}>
-            <FiList /> View Candidates
+            <FiList /> {t("candidates.viewCandidates")}
           </button>
           <button className="control-btn" onClick={getVoters}>
-            <FiUsers /> View Voters
+            <FiUsers /> {t("candidates.viewVoters")}
           </button>
         </div>
       )}
@@ -282,7 +259,7 @@ const Candidates = () => {
       {userData.role === "admin" && showAddForm && (
         <div className="form-container">
           <div className="form-header">
-            <h3>Add New Candidate</h3>
+            <h3>{t("candidates.addNewCandidate")}</h3>
             <button className="close-btn" onClick={() => setShowAddForm(false)}>
               <FiX />
             </button>
@@ -290,90 +267,88 @@ const Candidates = () => {
           <form onSubmit={handleAddCandidate}>
             <div className="form-grid">
               <div className="form-group">
-                <label>Full Name</label>
+                <label>{t("candidates.formName")}</label>
                 <input
                   type="text"
                   name="name"
                   value={newCandidate.name}
                   onChange={handleInputChange}
-                  placeholder="Enter candidate name"
+                  placeholder={t("candidates.formNamePh")}
                   required
                 />
               </div>
               <div className="form-group">
-                <label>Party</label>
+                <label>{t("candidates.formParty")}</label>
                 <input
                   type="text"
                   name="party"
                   value={newCandidate.party}
                   onChange={handleInputChange}
-                  placeholder="Enter party name"
+                  placeholder={t("candidates.formPartyPh")}
                   required
                 />
               </div>
               <div className="form-group">
-                <label>Email</label>
+                <label>{t("candidates.formEmail")}</label>
                 <input
                   type="email"
                   name="email"
                   value={newCandidate.email}
                   onChange={handleInputChange}
-                  placeholder="Enter email"
+                  placeholder={t("candidates.formEmailPh")}
                 />
               </div>
               <div className="form-group">
-                <label>Mobile</label>
+                <label>{t("candidates.formMobile")}</label>
                 <input
                   type="text"
                   name="mobile"
                   value={newCandidate.mobile}
                   onChange={handleInputChange}
-                  placeholder="Enter mobile number"
+                  placeholder={t("candidates.formMobilePh")}
                 />
               </div>
               <div className="form-group">
-                <label>Address</label>
+                <label>{t("candidates.formAddress")}</label>
                 <textarea
                   name="address"
                   value={newCandidate.address}
                   onChange={handleInputChange}
-                  placeholder="Enter address"
-                ></textarea>
+                  placeholder={t("candidates.formAddressPh")}
+                />
               </div>
               <div className="form-group">
-                <label>Education</label>
+                <label>{t("candidates.formEducation")}</label>
                 <input
                   type="text"
                   name="education"
                   value={newCandidate.education}
                   onChange={handleInputChange}
-                  placeholder="Enter education details"
+                  placeholder={t("candidates.formEducationPh")}
                 />
               </div>
               <div className="form-group">
-                <label>Experience</label>
+                <label>{t("candidates.formExperience")}</label>
                 <input
                   type="text"
                   name="experience"
                   value={newCandidate.experience}
                   onChange={handleInputChange}
-                  placeholder="Enter political experience"
+                  placeholder={t("candidates.formExperiencePh")}
                 />
               </div>
               <div className="form-group">
-                <label>Agenda</label>
+                <label>{t("candidates.formAgenda")}</label>
                 <textarea
                   name="agenda"
                   value={newCandidate.agenda}
                   onChange={handleInputChange}
-                  placeholder="Enter political agenda"
-                ></textarea>
+                  placeholder={t("candidates.formAgendaPh")}
+                />
               </div>
-
-              {/* Uploads */}
               <div className="form-group file-upload-wrapper">
                 <label className="file-upload-label">
-                  <FiUpload /> Upload Candidate Photo
+                  <FiUpload /> {t("candidates.uploadPhoto")}
                   <input
                     type="file"
                     accept="image/*"
@@ -391,7 +366,7 @@ const Candidates = () => {
               </div>
               <div className="form-group file-upload-wrapper">
                 <label className="file-upload-label">
-                  <FiUpload /> Upload Party Symbol
+                  <FiUpload /> {t("candidates.uploadSymbol")}
                   <input
                     type="file"
                     accept="image/*"
@@ -408,39 +383,37 @@ const Candidates = () => {
                 )}
               </div>
             </div>
-
             <div className="form-actions">
               <button type="submit" className="submit-btn">
-                Add Candidate
+                {t("candidates.addCandidate")}
               </button>
               <button
                 type="button"
                 className="cancel-btn"
                 onClick={() => setShowAddForm(false)}
               >
-                Cancel
+                {t("candidates.cancel")}
               </button>
             </div>
           </form>
         </div>
       )}
 
-      {/* Voters list */}
+      {/* Voters List */}
       {userData.role === "admin" && showVoters && (
         <div className="voters-list">
-          <h3>Registered Voters</h3>
-          {voters.length === 0 ? (
-            <p className="no-data">No voters found.</p>
-          ) : (
-            <div className="table-container">
+          <h3>{t("candidates.registeredVoters")}</h3>
+          {voters.length === 0 ?
+            <p className="no-data">{t("candidates.noVoters")}</p>
+          : <div className="table-container">
               <table>
                 <thead>
                   <tr>
-                    <th>S.No</th>
-                    <th>Name</th>
-                    <th>Email</th>
-                    <th>Voter Id</th>
-                    <th>Voting Status</th>
+                    <th>{t("candidates.colSno")}</th>
+                    <th>{t("candidates.colName")}</th>
+                    <th>{t("candidates.colEmail")}</th>
+                    <th>{t("candidates.colVoterId")}</th>
+                    <th>{t("candidates.colVotingStatus")}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -454,11 +427,11 @@ const Candidates = () => {
                       <td>{voter.voterId}</td>
                       <td>
                         <span
-                          className={`status ${
-                            voter.hasVoted ? "voted" : "pending"
-                          }`}
+                          className={`status ${voter.hasVoted ? "voted" : "pending"}`}
                         >
-                          {voter.hasVoted ? "Voted" : "Not Voted"}
+                          {voter.hasVoted ?
+                            t("candidates.voted")
+                          : t("candidates.notVoted")}
                         </span>
                       </td>
                     </tr>
@@ -466,7 +439,7 @@ const Candidates = () => {
                 </tbody>
               </table>
             </div>
-          )}
+          }
         </div>
       )}
 
@@ -475,7 +448,7 @@ const Candidates = () => {
         <div className="verification-modal-overlay">
           <div className="verification-modal-content">
             <div className="modal-header">
-              <h3>Face Verification</h3>
+              <h3>{t("candidates.faceVerification")}</h3>
               <button
                 onClick={() => setShowFaceVerification(false)}
                 className="close-btn"
@@ -483,10 +456,7 @@ const Candidates = () => {
                 <FiX />
               </button>
             </div>
-            <p>
-              Please position your face clearly in the frame and click
-              'Capture'.
-            </p>
+            <p>{t("candidates.faceInstruction")}</p>
             <div className="webcam-container">
               <Webcam
                 audio={false}
@@ -502,11 +472,13 @@ const Candidates = () => {
               className="capture-btn"
               disabled={verificationLoading}
             >
-              {capturedImage ? "Recapture" : "Capture Photo"}
+              {capturedImage ?
+                t("candidates.recapture")
+              : t("candidates.capturePhoto")}
             </button>
             {capturedImage && (
               <div className="captured-image-preview">
-                <h4>Captured Image</h4>
+                <h4>{t("candidates.capturedImage")}</h4>
                 <img src={capturedImage} alt="Captured" />
               </div>
             )}
@@ -518,33 +490,34 @@ const Candidates = () => {
               className="verify-vote-btn"
               disabled={!capturedImage || verificationLoading}
             >
-              {verificationLoading ? "Processing..." : "Verify & Vote"}
+              {verificationLoading ?
+                t("candidates.processing")
+              : t("candidates.verifyVote")}
             </button>
           </div>
         </div>
       )}
 
-      {/* Candidates display */}
+      {/* Candidates Display */}
       {(showCandidates || userData.role === "voter") && (
         <div className="candidates-list">
           <h3>
-            {userData.role === "admin"
-              ? "All Candidates"
-              : "Vote for Your Candidate"}
+            {userData.role === "admin" ?
+              t("candidates.allCandidates")
+            : t("candidates.voteForCandidate")}
           </h3>
-
-          {candidates.length === 0 ? (
-            <p className="no-data">No candidates available.</p>
-          ) : userData.role === "voter" ? (
+          {candidates.length === 0 ?
+            <p className="no-data">{t("candidates.noCandidates")}</p>
+          : userData.role === "voter" ?
             <div className="voter-table-container">
               <table className="voter-candidates-table">
                 <thead>
                   <tr>
-                    <th>S.No</th>
-                    <th>Candidate Name</th>
-                    <th>Party Name</th>
-                    <th>Party Symbol</th>
-                    <th>Action</th>
+                    <th>{t("candidates.colSno")}</th>
+                    <th>{t("candidates.colCandidateName")}</th>
+                    <th>{t("candidates.colPartyName")}</th>
+                    <th>{t("candidates.colPartySymbol")}</th>
+                    <th>{t("candidates.colAction")}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -563,41 +536,37 @@ const Candidates = () => {
                         )}
                       </td>
                       <td>
-                        {votedCandidateId === candidate._id ? (
+                        {votedCandidateId === candidate._id ?
                           <button className="voted-btn" disabled>
-                            Voted
+                            {t("candidates.voted")}
                           </button>
-                        ) : (
-                          <button
+                        : <button
                             onClick={() => handleVoteBtn(candidate._id)}
                             disabled={loadingVote || votedCandidateId !== null}
-                            className={`vote-btn ${
-                              votedCandidateId !== null ? "disabled-btn" : ""
-                            }`}
+                            className={`vote-btn ${votedCandidateId !== null ? "disabled-btn" : ""}`}
                           >
-                            {loadingVote ? "Voting..." : "Vote"}
+                            {loadingVote ?
+                              t("candidates.voting")
+                            : t("candidates.vote")}
                           </button>
-                        )}
+                        }
                       </td>
                     </tr>
                   ))}
                 </tbody>
               </table>
             </div>
-          ) : (
-            <div className="candidates-grid">
+          : <div className="candidates-grid">
               {candidates.map((candidate) => (
                 <div key={candidate._id} className="candidate-card">
                   <div className="candidate-photo-wrapper">
-                    {candidate.photo ? (
+                    {candidate.photo ?
                       <img
                         src={candidate.photo}
                         alt={candidate.name}
                         className="candidate-photo"
                       />
-                    ) : (
-                      <div className="no-photo">No Photo</div>
-                    )}
+                    : <div className="no-photo">{t("candidates.noPhoto")}</div>}
                     {candidate.partySymbol && (
                       <img
                         src={candidate.partySymbol}
@@ -608,12 +577,16 @@ const Candidates = () => {
                   </div>
                   <h4>{candidate.name}</h4>
                   <p className="party-name">{candidate.party}</p>
-                  <p>Experience: {candidate.experience}</p>
-                  <p>Agenda: {candidate.agenda}</p>
+                  <p>
+                    {t("candidates.experience")}: {candidate.experience}
+                  </p>
+                  <p>
+                    {t("candidates.agenda")}: {candidate.agenda}
+                  </p>
                 </div>
               ))}
             </div>
-          )}
+          }
         </div>
       )}
     </div>

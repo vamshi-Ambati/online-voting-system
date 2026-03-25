@@ -273,7 +273,7 @@ export default function VotingRegister() {
           </div>
 
           <div className="register-form">
-            {registerSuccess ? (
+            {registerSuccess ?
               <div className="success-message">
                 <div className="success-content">
                   <FaCheckCircle className="success-icon" />
@@ -284,8 +284,7 @@ export default function VotingRegister() {
                   </div>
                 </div>
               </div>
-            ) : (
-              <form onSubmit={handleSubmit}>
+            : <form onSubmit={handleSubmit}>
                 {/* Photo Upload */}
                 <label className="form-label photo-upload-label-text">
                   Profile Photo* (For Face Verification)
@@ -487,11 +486,11 @@ export default function VotingRegister() {
                       className="small-button"
                       style={{ flex: "1" }}
                     >
-                      {isSendingMobileOTP
-                        ? "Sending..."
-                        : mobileVerificationSent
-                        ? "Resend"
-                        : "Send OTP"}
+                      {isSendingMobileOTP ?
+                        "Sending..."
+                      : mobileVerificationSent ?
+                        "Resend"
+                      : "Send OTP"}
                     </button>
                     <button
                       type="button"
@@ -555,11 +554,11 @@ export default function VotingRegister() {
                       className="small-button"
                       style={{ flex: 1 }}
                     >
-                      {isSendingVerification
-                        ? "Sending..."
-                        : emailVerificationSent
-                        ? "Resend"
-                        : "Send code"}
+                      {isSendingVerification ?
+                        "Sending..."
+                      : emailVerificationSent ?
+                        "Resend"
+                      : "Send code"}
                     </button>
                     <button
                       type="button"
@@ -594,7 +593,9 @@ export default function VotingRegister() {
                         className="password-toggle-icon"
                         onClick={() => setShowPassword(!showPassword)}
                       >
-                        {showPassword ? <FaEyeSlash /> : <FaEye />}
+                        {showPassword ?
+                          <FaEyeSlash />
+                        : <FaEye />}
                       </span>
                     </div>
                   </div>
@@ -617,7 +618,9 @@ export default function VotingRegister() {
                           setShowConfirmPassword(!showConfirmPassword)
                         }
                       >
-                        {showConfirmPassword ? <FaEyeSlash /> : <FaEye />}
+                        {showConfirmPassword ?
+                          <FaEyeSlash />
+                        : <FaEye />}
                       </span>
                     </div>
                   </div>
@@ -689,7 +692,9 @@ export default function VotingRegister() {
                           onClick={() => setShowPin(!showPin)}
                           style={{ cursor: "pointer" }}
                         >
-                          {showPin ? <FaEyeSlash /> : <FaEye />}
+                          {showPin ?
+                            <FaEyeSlash />
+                          : <FaEye />}
                         </span>
                       </div>
                     </div>
@@ -701,17 +706,15 @@ export default function VotingRegister() {
                   disabled={isLoading}
                   className="register-submit-button"
                 >
-                  {isLoading ? (
+                  {isLoading ?
                     <div className="loading-content">
                       <div className="loading-spinner"></div>
                       Registering...
                     </div>
-                  ) : (
-                    "Create Account"
-                  )}
+                  : "Create Account"}
                 </button>
               </form>
-            )}
+            }
             <div className="form-footer">
               <p className="footer-text">
                 Already have an account?{" "}
@@ -733,3 +736,4 @@ export default function VotingRegister() {
     </div>
   );
 }
+

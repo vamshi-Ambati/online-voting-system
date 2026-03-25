@@ -1,12 +1,15 @@
 import React, { useState } from "react";
 import "../styles/Home.css";
 import { useNavigate } from "react-router-dom";
-import Chatbot from "./Chatbot"; // <-- ADD THIS
+import { useTranslation } from "react-i18next";
+import LanguageSwitcher from "../components/LanguageSwitcher";
+// import Chatbot from './Chatbot';
 
 const Home = () => {
   const [email, setEmail] = useState("");
   const [showVideo, setShowVideo] = useState(false);
   const navigate = useNavigate();
+  const { t } = useTranslation();
 
   const handleSubscribe = (e) => {
     e.preventDefault();
@@ -28,20 +31,21 @@ const Home = () => {
 
   return (
     <div className="voting-app">
+      <div style={{ position: "fixed", top: 16, right: 24, zIndex: 1000 }}>
+        {/* <LanguageSwitcher /> */}
+      </div>
+
       {/* Hero Section */}
       <section id="home" className="hero">
         <div className="hero-content">
-          <h1>Modern, Secure Online Voting</h1>
-          <p>
-            SecureVote provides a transparent, accessible, and verifiable voting
-            platform for organizations and institutions.
-          </p>
+          <h1>{t("hero.title")}</h1>
+          <p>{t("hero.subtitle")}</p>
           <div className="hero-buttons">
             <button className="cta-button" onClick={handleGetStarted}>
-              Get Started
+              {t("hero.getStarted")}
             </button>
             <button className="secondary-button" onClick={handleViewDemo}>
-              View Demo
+              {t("hero.viewDemo")}
             </button>
           </div>
         </div>
@@ -55,6 +59,7 @@ const Home = () => {
           </div>
         </div>
       </section>
+
       {/* Video Modal */}
       {showVideo && (
         <div className="video-modal">
@@ -64,105 +69,44 @@ const Home = () => {
             </button>
             <video width="800" controls autoPlay>
               <source src="/demo.mp4" type="video/mp4" />
-              Your browser does not support the video tag.
+              {t("video.unsupported")}
             </video>
           </div>
         </div>
       )}
+
       {/* Features Section */}
       <section id="features" className="features">
         <div className="container">
-          <h2>Why Choose SecureVote?</h2>
+          <h2>{t("features.heading")}</h2>
           <div className="features-grid">
             <div className="feature-card">
               <div className="feature-icon">
                 <i className="fas fa-check-circle"></i>
               </div>
-              <h3>Verifiable Results</h3>
-              <p>
-                Verify your vote was counted correctly without compromising
-                anonymity.
-              </p>
+              <h3>{t("features.verifiable")}</h3>
+              <p>{t("features.verifiableDesc")}</p>
             </div>
 
             <div className="feature-card">
               <div className="feature-icon">
                 <i className="fas fa-mobile-alt"></i>
               </div>
-              <h3>Mobile Accessibility</h3>
-              <p>Vote from anywhere using our responsive mobile platform.</p>
+              <h3>{t("features.mobile")}</h3>
+              <p>{t("features.mobileDesc")}</p>
             </div>
 
             <div className="feature-card">
               <div className="feature-icon">
                 <i className="fas fa-chart-bar"></i>
               </div>
-              <h3>Real-time Analytics</h3>
-              <p>
-                Monitor election progress with live result tracking and
-                analytics.
-              </p>
+              <h3>{t("features.analytics")}</h3>
+              <p>{t("features.analyticsDesc")}</p>
             </div>
           </div>
         </div>
       </section>
-      {/* Security Section */}
-      {/* <section className="security">
-        <div className="container">
-          <div className="security-content">
-            <div className="security-text">
-              <h2>Advanced Security Measures</h2>
-              <p>
-                Our platform utilizes cutting-edge technology to ensure the
-                integrity of every election:
-              </p>
-              <ul>
-                <li>
-                  <i className="fas fa-user-shield"></i> Voter identity
-                  protection
-                </li>
-                <li>
-                  <i className="fas fa-clipboard-check"></i> Transparent audit
-                  trails
-                </li>
-              </ul>
-            </div>
 
-            <div className="security-visual">
-              <div className="encryption-animation">
-                <div className="data-block">Vote Data</div>
-                <div className="encryption-process">
-                  <i className="fas fa-long-arrow-alt-right"></i>
-                  <div className="lock-icon">🔒</div>
-                  <i className="fas fa-long-arrow-alt-right"></i>
-                </div>
-                <div className="encrypted-block">Encrypted</div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section> */}
-      {/* Newsletter Section */}
-      {/* <section className="newsletter">
-        <div className="container">
-          <h2>Stay Updated</h2>
-          <p>
-            Subscribe to our newsletter for updates on new features and election
-            best practices.
-          </p>
-
-          <form onSubmit={handleSubscribe} className="subscribe-form">
-            <input
-              type="email"
-              placeholder="Enter your email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-            />
-            <button type="submit">Subscribe</button>
-          </form>
-        </div>
-      </section> */}
       {/* Footer */}
       <footer className="footer">
         <div className="container">
@@ -172,65 +116,61 @@ const Home = () => {
                 <i className="fas fa-vote-yea"></i>
                 <span>SecureVote</span>
               </div>
-              <p>
-                Making democratic processes accessible, secure, and transparent
-                for everyone.
-              </p>
+              <p>{t("footer.tagline")}</p>
             </div>
 
             <div className="footer-section">
-              <h3>Company</h3>
+              <h3>{t("footer.company")}</h3>
               <ul>
                 <li>
-                  <a href="#about">About Us</a>
+                  <a href="#about">{t("footer.about")}</a>
                 </li>
                 <li>
-                  <a href="#careers">Careers</a>
+                  <a href="#careers">{t("footer.careers")}</a>
                 </li>
                 <li>
-                  <a href="#contact">Contact</a>
+                  <a href="#contact">{t("footer.contact")}</a>
                 </li>
               </ul>
             </div>
 
             <div className="footer-section">
-              <h3>Resources</h3>
+              <h3>{t("footer.resources")}</h3>
               <ul>
                 <li>
-                  <a href="#blog">Blog</a>
+                  <a href="#blog">{t("footer.blog")}</a>
                 </li>
                 <li>
-                  <a href="#docs">Documentation</a>
+                  <a href="#docs">{t("footer.docs")}</a>
                 </li>
                 <li>
-                  <a href="#support">Support</a>
+                  <a href="#support">{t("footer.support")}</a>
                 </li>
               </ul>
             </div>
 
             <div className="footer-section">
-              <h3>Legal</h3>
+              <h3>{t("footer.legal")}</h3>
               <ul>
                 <li>
-                  <a href="#privacy">Privacy Policy</a>
+                  <a href="#privacy">{t("footer.privacy")}</a>
                 </li>
                 <li>
-                  <a href="#terms">Terms of Service</a>
+                  <a href="#terms">{t("footer.terms")}</a>
                 </li>
                 <li>
-                  <a href="#compliance">Compliance</a>
+                  <a href="#compliance">{t("footer.compliance")}</a>
                 </li>
               </ul>
             </div>
           </div>
 
           <div className="footer-bottom">
-            <p>&copy; 2023 SecureVote. All rights reserved.</p>
+            <p>{t("footer.rights")}</p>
           </div>
         </div>
       </footer>
-      {/* Floating Chatbot */}
-      {/* <Chatbot /> */}
+
     </div>
   );
 };

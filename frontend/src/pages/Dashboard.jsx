@@ -19,11 +19,12 @@ import {
   FaChartLine,
   FaSyncAlt,
 } from "react-icons/fa";
+import { useTranslation } from "react-i18next";
 
 const Dashboard = () => {
-  // Get user data from localStorage
+  const { t } = useTranslation();
   const userData = JSON.parse(localStorage.getItem("userData")) || {};
-  const userRole = userData.role || "voter"; // default to "voter"
+  const userRole = userData.role || "voter";
 
   const [voters, setVoters] = useState([]);
   const [candidates, setCandidates] = useState([]);
@@ -35,10 +36,8 @@ const Dashboard = () => {
     votesCast: 0,
     participationRate: 0,
   });
-
   const [activeView, setActiveView] = useState("voters");
 
-  // ------------------- FETCH DATA -------------------
   const fetchVoters = async () => {
     try {
       const response = await fetch(`${apiUrl}/api/candidates/getAllVoters`);
@@ -46,13 +45,11 @@ const Dashboard = () => {
       const data = await response.json();
       const votersArray = Array.isArray(data.voters) ? data.voters : [];
       setVoters(votersArray);
-
       const votesCastCount = votersArray.filter((v) => v.hasVoted).length;
       const participationRate =
-        votersArray.length > 0
-          ? ((votesCastCount / votersArray.length) * 100).toFixed(2)
-          : 0;
-
+        votersArray.length > 0 ?
+          ((votesCastCount / votersArray.length) * 100).toFixed(2)
+        : 0;
       setStats((prev) => ({
         ...prev,
         totalVoters: votersArray.length,
@@ -69,11 +66,9 @@ const Dashboard = () => {
       const response = await fetch(`${apiUrl}/api/candidates/getCandidates`);
       if (!response.ok) throw new Error(`Failed: ${response.statusText}`);
       const data = await response.json();
-      const candidatesArray = Array.isArray(data.candidates)
-        ? data.candidates
-        : [];
+      const candidatesArray =
+        Array.isArray(data.candidates) ? data.candidates : [];
       setCandidates(candidatesArray);
-
       setStats((prev) => ({
         ...prev,
         totalCandidates: candidatesArray.length,
@@ -100,29 +95,23 @@ const Dashboard = () => {
     setLoading(false);
   };
 
-  // ------------------- DELETE VOTER -------------------
   const handleDeleteVoter = async (voterId) => {
-    if (!window.confirm("Are you sure you want to delete this voter?")) return;
-
+    if (!window.confirm(t("dashboard.deleteConfirm"))) return;
     try {
       const response = await fetch(`${apiUrl}/voter/delete/${voterId}`, {
         method: "DELETE",
       });
       const data = await response.json();
-
       if (data.success) {
-        alert("Voter deleted successfully");
+        alert(t("dashboard.deleteSuccess"));
         setVoters((prev) => prev.filter((v) => v.voterId !== voterId));
-
-        // Update stats
         const votesCastCount = voters.filter(
-          (v) => v.hasVoted && v.voterId !== voterId
+          (v) => v.hasVoted && v.voterId !== voterId,
         ).length;
         const participationRate =
-          voters.length > 1
-            ? ((votesCastCount / (voters.length - 1)) * 100).toFixed(2)
-            : 0;
-
+          voters.length > 1 ?
+            ((votesCastCount / (voters.length - 1)) * 100).toFixed(2)
+          : 0;
         setStats((prev) => ({
           ...prev,
           totalVoters: prev.totalVoters - 1,
@@ -130,24 +119,19 @@ const Dashboard = () => {
           participationRate,
         }));
       } else {
-        alert(data.message || "Failed to delete voter");
+        alert(data.message || t("dashboard.deleteFail"));
       }
     } catch (error) {
       console.error("Delete error:", error);
-      alert("Error deleting voter");
+      alert(t("dashboard.deleteError"));
     }
   };
-
-  const chartData = candidates.map((candidate) => ({
-    name: candidate.name,
-    votes: candidate.votes || 0,
-  }));
 
   if (loading) {
     return (
       <div className="dashboard-loading">
         <div className="loading-spinner"></div>
-        <p>Loading dashboard data...</p>
+        <p>{t("dashboard.loading")}</p>
       </div>
     );
   }
@@ -157,7 +141,7 @@ const Dashboard = () => {
       <div className="dashboard-error">
         <p>{error?.message || String(error)}</p>
         <button onClick={refreshData}>
-          <FaSyncAlt /> Retry
+          <FaSyncAlt /> {t("dashboard.retry")}
         </button>
       </div>
     );
@@ -166,62 +150,61 @@ const Dashboard = () => {
   return (
     <div className="voting-dashboard">
       <div className="dashboard-container">
-        {/* Stats Section */}
+        {/* Stats */}
         <div className="stats-grid">
           <div
             className="stat-card clickable"
             onClick={() => setActiveView("voters")}
-            title="Click to view voters list"
+            title={t("dashboard.viewVoters")}
           >
             <FaUsers />
             <h3>{stats.totalVoters}</h3>
-            <p>Total Voters</p>
+            <p>{t("dashboard.totalVoters")}</p>
           </div>
-
           <div
             className="stat-card clickable"
             onClick={() => setActiveView("candidates")}
-            title="Click to view candidates list"
+            title={t("dashboard.viewCandidates")}
           >
             <FaUserTie />
             <h3>{stats.totalCandidates}</h3>
-            <p>Total Candidates</p>
+            <p>{t("dashboard.totalCandidates")}</p>
           </div>
-
           <div className="stat-card">
             <FaVoteYea />
             <h3>{stats.votesCast}</h3>
-            <p>Votes Casted</p>
+            <p>{t("dashboard.votesCast")}</p>
           </div>
-
           <div className="stat-card">
             <FaChartLine />
             <h3>{stats.participationRate}%</h3>
-            <p>Participation Rate</p>
+            <p>{t("dashboard.participationRate")}</p>
           </div>
         </div>
 
-        {/* Dashboard Panels */}
+        {/* Panels */}
         <div className="dashboard-content single-panel">
           {activeView === "voters" && (
             <div className="data-panel full-width">
               <div className="panel-header">
                 <h2>
-                  <FaUsers /> Recently Registered Voters
+                  <FaUsers /> {t("dashboard.recentVoters")}
                 </h2>
                 <button className="refresh-btn" onClick={refreshData}>
-                  <FaSyncAlt /> Refresh Data
+                  <FaSyncAlt /> {t("dashboard.refreshData")}
                 </button>
               </div>
               <div className="table-container">
                 <table>
                   <thead>
                     <tr>
-                      <th>Name</th>
-                      <th>Email</th>
-                      <th>Registration Date</th>
-                      <th>Status</th>
-                      {userRole === "admin" && <th>Action</th>}
+                      <th>{t("dashboard.colName")}</th>
+                      <th>{t("dashboard.colEmail")}</th>
+                      <th>{t("dashboard.colRegDate")}</th>
+                      <th>{t("dashboard.colStatus")}</th>
+                      {userRole === "admin" && (
+                        <th>{t("dashboard.colAction")}</th>
+                      )}
                     </tr>
                   </thead>
                   <tbody>
@@ -230,24 +213,22 @@ const Dashboard = () => {
                         <td>{`${voter.firstName} ${voter.lastName}`}</td>
                         <td>{voter.email}</td>
                         <td>
-                          {voter.createdAt
-                            ? new Date(voter.createdAt).toLocaleDateString()
-                            : ""}
+                          {voter.createdAt ?
+                            new Date(voter.createdAt).toLocaleDateString()
+                          : ""}
                         </td>
                         <td>
                           <span
-                            className={`status ${
-                              voter.status?.toLowerCase() || ""
-                            }`}
+                            className={`status ${voter.status?.toLowerCase() || ""}`}
                           >
                             {voter.status || ""}
                           </span>
                           <span
-                            className={`voted-status ${
-                              voter.hasVoted ? "voted" : "not-voted"
-                            }`}
+                            className={`voted-status ${voter.hasVoted ? "voted" : "not-voted"}`}
                           >
-                            {voter.hasVoted ? "Voted" : "Not Voted"}
+                            {voter.hasVoted ?
+                              t("dashboard.voted")
+                            : t("dashboard.notVoted")}
                           </span>
                         </td>
                         {userRole === "admin" && (
@@ -255,9 +236,9 @@ const Dashboard = () => {
                             <button
                               className="delete-btn"
                               onClick={() => handleDeleteVoter(voter.voterId)}
-                              title="Delete Voter"
-                            >Delete voter
-                              {/* <FaTrash /> */}
+                              title={t("dashboard.deleteVoter")}
+                            >
+                              {t("dashboard.deleteVoter")}
                             </button>
                           </td>
                         )}
@@ -273,20 +254,20 @@ const Dashboard = () => {
             <div className="data-panel full-width">
               <div className="panel-header">
                 <h2>
-                  <FaUserTie /> Registered Candidates
+                  <FaUserTie /> {t("dashboard.registeredCandidates")}
                 </h2>
                 <button className="refresh-btn" onClick={refreshData}>
-                  <FaSyncAlt /> Refresh Data
+                  <FaSyncAlt /> {t("dashboard.refreshData")}
                 </button>
               </div>
               <div className="table-container">
                 <table>
                   <thead>
                     <tr>
-                      <th>Name</th>
-                      <th>Party</th>
-                      <th>Votes</th>
-                      <th>Status</th>
+                      <th>{t("dashboard.colName")}</th>
+                      <th>{t("dashboard.colParty")}</th>
+                      <th>{t("dashboard.colVotes")}</th>
+                      <th>{t("dashboard.colStatus")}</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -297,9 +278,7 @@ const Dashboard = () => {
                         <td>{candidate.votes}</td>
                         <td>
                           <span
-                            className={`status ${
-                              candidate.status?.toLowerCase() || ""
-                            }`}
+                            className={`status ${candidate.status?.toLowerCase() || ""}`}
                           >
                             {candidate.status || ""}
                           </span>
@@ -312,8 +291,6 @@ const Dashboard = () => {
             </div>
           )}
         </div>
-
-        
       </div>
     </div>
   );

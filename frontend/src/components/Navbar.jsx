@@ -3,10 +3,14 @@ import { NavLink, useNavigate, useLocation } from "react-router-dom";
 import "../components/Navbar.css";
 import voteImage from "/images/vote2.png";
 import { FaUserCircle, FaSignOutAlt, FaChevronDown } from "react-icons/fa";
+import { useTranslation } from "react-i18next";
+import LanguageSwitcher from "./LanguageSwitcher";
 
 const Navbar = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const { t } = useTranslation();
+
   const [menuOpen, setMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [userRole, setUserRole] = useState(null);
@@ -16,27 +20,22 @@ const Navbar = () => {
     return !!localStorage.getItem("authToken");
   });
 
-  // Effect to handle scroll behavior
+  // Handle scroll
   useEffect(() => {
     const handleScroll = () => {
       const isScrolled = window.scrollY > 10;
-      if (isScrolled !== scrolled) {
-        setScrolled(isScrolled);
-      }
+      if (isScrolled !== scrolled) setScrolled(isScrolled);
     };
-
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
   }, [scrolled]);
 
-  // Effect to sync login state
+  // Sync login state on route change
   useEffect(() => {
     const syncAuthState = () => {
       const authToken = localStorage.getItem("authToken");
-      const voter = authToken
-        ? JSON.parse(localStorage.getItem("userData"))
-        : null;
-
+      const voter =
+        authToken ? JSON.parse(localStorage.getItem("userData")) : null;
       setIsLoggedIn(!!authToken);
       setUserData(voter);
       setUserRole(voter?.role || null);
@@ -45,15 +44,21 @@ const Navbar = () => {
     syncAuthState();
     window.addEventListener("storage", syncAuthState);
     setMenuOpen(false);
-
-    return () => {
-      window.removeEventListener("storage", syncAuthState);
-    };
+    return () => window.removeEventListener("storage", syncAuthState);
   }, [location]);
+
+  // Close dropdown on outside click
+  useEffect(() => {
+    const handleClickOutside = () => {
+      if (dropdownOpen) setDropdownOpen(false);
+    };
+    document.addEventListener("click", handleClickOutside);
+    return () => document.removeEventListener("click", handleClickOutside);
+  }, [dropdownOpen]);
 
   const handleLogout = () => {
     const voter = JSON.parse(localStorage.getItem("userData"));
-    if (voter && voter.id) {
+    if (voter?.id) {
       localStorage.removeItem(`votedCandidateId_${voter.id}`);
     }
     localStorage.removeItem("userData");
@@ -74,20 +79,47 @@ const Navbar = () => {
     setDropdownOpen(!dropdownOpen);
   };
 
-  useEffect(() => {
-    const handleClickOutside = () => {
-      if (dropdownOpen) {
-        setDropdownOpen(false);
-      }
-    };
+  // Shared admin nav links
+  const AdminLinks = () => (
+    <>
+      <li>
+        <NavLink to="/results" onClick={handleNavClick}>
+          {t("nav.results")}
+        </NavLink>
+      </li>
+      <li>
+        <NavLink to="/dashboard" onClick={handleNavClick}>
+          {t("nav.dashboard")}
+        </NavLink>
+      </li>
+      <li>
+        <NavLink to="/candidates" onClick={handleNavClick}>
+          {t("nav.candidates")}
+        </NavLink>
+      </li>
+    </>
+  );
 
-    document.addEventListener("click", handleClickOutside);
-    return () => document.removeEventListener("click", handleClickOutside);
-  }, [dropdownOpen]);
+  // Shared voter nav links
+  const VoterLinks = () => (
+    <>
+      <li>
+        <NavLink to="/candidates" onClick={handleNavClick}>
+          {t("nav.candidates")}
+        </NavLink>
+      </li>
+      <li>
+        <NavLink to="/dashboard" onClick={handleNavClick}>
+          {t("nav.dashboard")}
+        </NavLink>
+      </li>
+    </>
+  );
 
   return (
     <header className={`header${scrolled ? " scrolled" : ""}`}>
       <div className="navbar-container">
+        {/* Logo */}
         <div className="logo-name">
           <NavLink to="/" onClick={handleNavClick} className="logo-link">
             <img src={voteImage} alt="Vote Logo" className="logo-img" />
@@ -100,62 +132,26 @@ const Navbar = () => {
           <ul>
             <li>
               <NavLink to="/" onClick={handleNavClick}>
-                Home
+                {t("nav.home")}
               </NavLink>
             </li>
 
-            {isLoggedIn && (
-              <>
-                {userRole === "admin" ? (
-                  <>
-                    <li>
-                      <NavLink to="/results" onClick={handleNavClick}>
-                        Results
-                      </NavLink>
-                    </li>
-                    <li>
-                      <NavLink to="/dashboard" onClick={handleNavClick}>
-                        Dashboard
-                      </NavLink>
-                    </li>
-                    <li>
-                      <NavLink to="/candidates" onClick={handleNavClick}>
-                        Candidates
-                      </NavLink>
-                    </li>
-                    {/* <li>
-                      <NavLink to="/polls" onClick={handleNavClick}>
-                        Polls
-                      </NavLink>
-                    </li> */}
-                  </>
-                ) : (
-                  <>
-                    <li>
-                      <NavLink to="/candidates" onClick={handleNavClick}>
-                        Candidates
-                      </NavLink>
-                    </li>
-                    <li>
-                      <NavLink to="/dashboard" onClick={handleNavClick}>
-                        Dashboard
-                      </NavLink>
-                    </li>
-                    {/* <li>
-                      <NavLink to="/polls" onClick={handleNavClick}>
-                        Polls
-                      </NavLink>
-                    </li> */}
-                  </>
-                )}
-              </>
-            )}
+            {isLoggedIn &&
+              (userRole === "admin" ? <AdminLinks /> : <VoterLinks />)}
           </ul>
         </nav>
 
-        {/* User Actions */}
-        <div className="user-actions">
-          {isLoggedIn ? (
+        {/* User Actions + Language Switcher */}
+        <div
+          className="user-actions"
+          style={{ display: "flex", alignItems: "center", gap: "12px" }}
+        >
+          {/* Language switcher — visible on desktop */}
+          <div className="desktop-lang-switcher">
+            <LanguageSwitcher />
+          </div>
+
+          {isLoggedIn ?
             <div className="user-dropdown-container">
               <button
                 className="user-profile-btn"
@@ -168,6 +164,7 @@ const Navbar = () => {
                   className={`dropdown-arrow ${dropdownOpen ? "open" : ""}`}
                 />
               </button>
+
               {dropdownOpen && (
                 <div className="user-dropdown">
                   <NavLink
@@ -175,22 +172,21 @@ const Navbar = () => {
                     className="dropdown-item"
                     onClick={handleNavClick}
                   >
-                    <FaUserCircle /> My Profile
+                    <FaUserCircle /> {t("nav.myProfile")}
                   </NavLink>
                   <button
                     className="dropdown-item logout-btn"
                     onClick={handleLogout}
                   >
-                    <FaSignOutAlt /> Logout
+                    <FaSignOutAlt /> {t("nav.logout")}
                   </button>
                 </div>
               )}
             </div>
-          ) : (
-            <NavLink to="/login" className="login-btn">
-              Login
+          : <NavLink to="/login" className="login-btn">
+              {t("nav.login")}
             </NavLink>
-          )}
+          }
         </div>
 
         {/* Mobile Navigation */}
@@ -199,46 +195,18 @@ const Navbar = () => {
             <ul>
               <li>
                 <NavLink to="/" onClick={handleNavClick}>
-                  Home
+                  {t("nav.home")}
                 </NavLink>
               </li>
+
               {isLoggedIn && (
                 <>
-                  {userRole === "admin" ? (
-                    <>
-                      <li>
-                        <NavLink to="/results" onClick={handleNavClick}>
-                          Results
-                        </NavLink>
-                      </li>
-                      <li>
-                        <NavLink to="/dashboard" onClick={handleNavClick}>
-                          Dashboard
-                        </NavLink>
-                      </li>
-                      <li>
-                        <NavLink to="/candidates" onClick={handleNavClick}>
-                          Candidates
-                        </NavLink>
-                      </li>
-                    </>
-                  ) : (
-                    <>
-                      <li>
-                        <NavLink to="/candidates" onClick={handleNavClick}>
-                          Candidates
-                        </NavLink>
-                      </li>
-                      <li>
-                        <NavLink to="/dashboard" onClick={handleNavClick}>
-                          Dashboard
-                        </NavLink>
-                      </li>
-                    </>
-                  )}
+                  {userRole === "admin" ?
+                    <AdminLinks />
+                  : <VoterLinks />}
                   <li>
                     <NavLink to="/profile" onClick={handleNavClick}>
-                      My Profile
+                      {t("nav.myProfile")}
                     </NavLink>
                   </li>
                   <li>
@@ -246,23 +214,29 @@ const Navbar = () => {
                       className="mobile-logout-btn"
                       onClick={handleLogout}
                     >
-                      Logout
+                      {t("nav.logout")}
                     </button>
                   </li>
                 </>
               )}
+
               {!isLoggedIn && (
                 <li>
                   <NavLink to="/login" onClick={handleNavClick}>
-                    Login
+                    {t("nav.login")}
                   </NavLink>
                 </li>
               )}
+
+              {/* Language switcher inside mobile menu */}
+              <li style={{ marginTop: "12px", paddingLeft: "8px" }}>
+                <LanguageSwitcher />
+              </li>
             </ul>
           </nav>
         </div>
 
-        {/* Hamburger menu icon */}
+        {/* Hamburger */}
         <div
           className={`hamburger${menuOpen ? " active" : ""}`}
           onClick={() => setMenuOpen(!menuOpen)}
@@ -275,7 +249,7 @@ const Navbar = () => {
           <span />
         </div>
 
-        {/* Overlay for mobile menu */}
+        {/* Mobile overlay */}
         {menuOpen && (
           <div className="nav-overlay" onClick={handleNavClick}></div>
         )}
