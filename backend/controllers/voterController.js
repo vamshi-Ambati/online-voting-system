@@ -71,7 +71,7 @@ const sendMobileOtp = async (req, res) => {
 
     // Send OTP via 2factor.in API
     const response = await axios.get(
-      `https://2factor.in/API/V1/${process.env.TWOFCTOR_IN_API_KEY}/SMS/${mobile}/AUTOGEN`
+      `https://2factor.in/API/V1/${process.env.TWOFCTOR_IN_API_KEY}/SMS/${mobile}/AUTOGEN`,
     );
 
     if (response.data.Status === "Success") {
@@ -90,7 +90,6 @@ const sendMobileOtp = async (req, res) => {
   }
 };
 
-
 const verifyMobileOtp = async (req, res) => {
   const { mobile, otp } = req.body;
   if (!mobile || !otp)
@@ -104,7 +103,7 @@ const verifyMobileOtp = async (req, res) => {
         .json({ message: "No OTP session found. Please request OTP again." });
 
     const response = await axios.get(
-      `https://2factor.in/API/V1/${process.env.TWOFCTOR_IN_API_KEY}/SMS/VERIFY/${record.sessionId}/${otp}`
+      `https://2factor.in/API/V1/${process.env.TWOFCTOR_IN_API_KEY}/SMS/VERIFY/${record.sessionId}/${otp}`,
     );
 
     if (
@@ -112,12 +111,10 @@ const verifyMobileOtp = async (req, res) => {
       response.data.Details === "OTP Matched"
     ) {
       await mobileOTP.deleteOne({ _id: record._id });
-      res
-        .status(200)
-        .json({
-          success: true,
-          message: "Mobile number verified successfully",
-        });
+      res.status(200).json({
+        success: true,
+        message: "Mobile number verified successfully",
+      });
     } else {
       res.status(400).json({ message: "Invalid or expired OTP" });
     }
@@ -226,12 +223,10 @@ const handleRegister = async (req, res) => {
       !aadhaar ||
       !mobile
     ) {
-      return res
-        .status(400)
-        .json({
-          success: false,
-          message: "All required fields must be provided",
-        });
+      return res.status(400).json({
+        success: false,
+        message: "All required fields must be provided",
+      });
     }
 
     const imageUrl = uploadedFile.path || uploadedFile.url;
@@ -269,13 +264,11 @@ const handleRegister = async (req, res) => {
       hasVoted: false,
     });
 
-    res
-      .status(201)
-      .json({
-        success: true,
-        message: "Registration successful",
-        role: newUser.role,
-      });
+    res.status(201).json({
+      success: true,
+      message: "Registration successful",
+      role: newUser.role,
+    });
   } catch (error) {
     console.error("Registration Error:", error);
     res.status(500).json({ success: false, message: "Registration failed" });
@@ -294,21 +287,17 @@ const handleLogin = async (req, res) => {
     let user;
     if (role === "admin") {
       if (!email)
-        return res
-          .status(400)
-          .json({
-            success: false,
-            message: "Email is required for admin login",
-          });
+        return res.status(400).json({
+          success: false,
+          message: "Email is required for admin login",
+        });
       user = await Voter.findOne({ email, role: "admin" });
     } else {
       if (!voterId)
-        return res
-          .status(400)
-          .json({
-            success: false,
-            message: "Voter ID is required for voter login",
-          });
+        return res.status(400).json({
+          success: false,
+          message: "Voter ID is required for voter login",
+        });
       user = await Voter.findOne({ voterId, role: "voter" });
     }
 
@@ -331,7 +320,7 @@ const handleLogin = async (req, res) => {
         voterId: user.voterId,
       },
       process.env.SECRET_KEY,
-      { expiresIn: "7d" }
+      { expiresIn: "7d" },
     );
 
     res.json({

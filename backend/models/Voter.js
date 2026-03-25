@@ -19,7 +19,7 @@ const voterSchema = new mongoose.Schema(
     faceDescriptors: { type: [Number], required: true },
     hasVoted: { type: Boolean, default: false },
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
 module.exports = mongoose.model("Voter", voterSchema);

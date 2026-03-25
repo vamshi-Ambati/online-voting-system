@@ -6,8 +6,9 @@ const { connectRabbitMQ } = require("./utils/rabbitmq");
 
 const app = express();
 
-const allowedOrigins = process.env.CORS_ORIGIN
-  ? process.env.CORS_ORIGIN.split(",").map((o) => o.trim())
+const allowedOrigins =
+  process.env.CORS_ORIGIN ?
+    process.env.CORS_ORIGIN.split(",").map((o) => o.trim())
   : ["http://localhost:3000", "http://localhost:5173"];
 
 app.use(
@@ -26,7 +27,7 @@ app.use(
     allowedHeaders: ["Content-Type", "Authorization"],
     credentials: true,
     optionsSuccessStatus: 200,
-  })
+  }),
 );
 
 app.use(cors());
